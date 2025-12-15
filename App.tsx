@@ -2,8 +2,10 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Button, ScrollView, ActivityIndicator } from 'react-native';
 import { useState } from 'react';
 import { getVersionInfo, listDrivers, VersionInfoResponse, DriversListResponse } from './modules/expo-gdal-pdfium';
+import ReadGeoPDFScreen from './screens/ReadGeoPDFScreen';
 
 export default function App() {
+  const [currentScreen, setCurrentScreen] = useState<'main' | 'readPdf'>('main');
   const [versionInfo, setVersionInfo] = useState<VersionInfoResponse | null>(null);
   const [driversList, setDriversList] = useState<DriversListResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -91,12 +93,31 @@ export default function App() {
     }
   };
 
+  // Simple navigation handler
+  const navigation = {
+    goBack: () => setCurrentScreen('main'),
+    navigate: (screen: 'readPdf') => setCurrentScreen(screen),
+  };
+
+  // Show ReadGeoPDF screen if selected
+  if (currentScreen === 'readPdf') {
+    return <ReadGeoPDFScreen navigation={navigation} />;
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>GDAL Version Info Test</Text>
         <Text style={styles.subtitle}>Test the GDAL getVersionInfo function</Text>
+
+        <View style={styles.buttonContainer}>
+          <Button
+            title="Read GeoPDF"
+            onPress={() => setCurrentScreen('readPdf')}
+            color="#007AFF"
+          />
+        </View>
 
         <View style={styles.buttonContainer}>
           <Button

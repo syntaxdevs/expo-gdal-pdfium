@@ -10,6 +10,8 @@ import java.net.URL
 // Standard GDAL Java bindings use: org.gdal.gdal.gdal
 import org.gdal.gdal.gdal
 import org.gdal.gdal.Driver
+import org.gdal.gdal.Dataset
+import org.gdal.gdal.Band
 
 class ExpoGdalPdfiumModule : Module() {
   companion object {
@@ -185,6 +187,119 @@ class ExpoGdalPdfiumModule : Module() {
             "ERROR",
             true,
             mapOf("errorDetails" to (e.message ?: "Unknown error"), "errorType" to e.javaClass.simpleName)
+          )
+        )
+      }
+    }
+
+    // GDAL Read GeoPDF Function
+    // Reads a GeoPDF file and returns its information
+    AsyncFunction("readGeoPDF") { filePath: String, promise: Promise ->
+      try {
+        Log.i("ExpoGdalPdfium", "Reading GeoPDF: $filePath")
+        
+        // Register all drivers first
+        gdal.AllRegister()
+        
+        // Open the GeoPDF file
+        val dataset: Dataset? = gdal.Open(filePath)
+        
+        if (dataset == null) {
+          promise.resolve(
+            createResponseMap(
+              "Failed to open GeoPDF file",
+              "FILE_NOT_FOUND",
+              true,
+              mapOf("errorDetails" to "Could not open file: $filePath")
+            )
+          )
+          return@AsyncFunction
+        }
+        
+        try {
+          // Get basic dataset information
+          val width = dataset.GetRasterXSize()
+          val height = dataset.GetRasterYSize()
+          val bandCount = dataset.GetRasterCount()
+          val projection = dataset.GetProjectionRef() ?: "Unknown"
+          val driver = dataset.GetDriver()
+          val driverName = driver?.getShortName() ?: "Unknown"
+          
+          // Get geotransform (spatial reference)
+          val geoTransform = DoubleArray(6)
+          dataset.GetGeoTransform(geoTransform)
+          
+          // Get band information
+          val bandsInfo = mutableListOf<Map<String, Any>>()
+          for (i in 1..bandCount) {
+            val band: Band? = dataset.GetRasterBand(i)
+            band?.let {
+              val dataType = it.GetRasterDataType()
+              val blockWidth = it.GetBlockXSize()
+              val blockHeight = it.GetBlockYSize()
+              bandsInfo.add(
+                mapOf(
+                  "bandNumber" to i.toString(),
+                  "dataType" to dataType.toString(),
+                  "blockWidth" to blockWidth.toString(),
+                  "blockHeight" to blockHeight.toString()
+                )
+              )
+            }
+          }
+          
+          promise.resolve(
+            createResponseMap(
+              "GeoPDF read successfully",
+              "SUCCESS",
+              false,
+              mapOf(
+                "filePath" to filePath,
+                "width" to width.toString(),
+                "height" to height.toString(),
+                "bandCount" to bandCount.toString(),
+                "driver" to driverName,
+                "projection" to projection,
+                "geoTransform" to geoTransform.map { it.toString() },
+                "bands" to bandsInfo
+              )
+            )
+          )
+        } finally {
+          // Close the dataset to free resources
+          dataset.delete()
+        }
+      } catch (e: ClassNotFoundException) {
+        Log.e("ExpoGdalPdfium", "GDAL classes not found", e)
+        promise.resolve(
+          createResponseMap(
+            "GDAL classes not found",
+            "CLASS_NOT_FOUND",
+            true,
+            mapOf("errorDetails" to (e.message ?: "Unknown error"))
+          )
+        )
+      } catch (e: UnsatisfiedLinkError) {
+        Log.e("ExpoGdalPdfium", "GDAL native library not loaded", e)
+        promise.resolve(
+          createResponseMap(
+            "GDAL native library not loaded",
+            "NATIVE_LIBRARY_ERROR",
+            true,
+            mapOf("errorDetails" to (e.message ?: "Unknown error"))
+          )
+        )
+      } catch (e: Exception) {
+        Log.e("ExpoGdalPdfium", "Error reading GeoPDF", e)
+        promise.resolve(
+          createResponseMap(
+            "Error reading GeoPDF: ${e.message}",
+            "ERROR",
+            true,
+            mapOf(
+              "errorDetails" to (e.message ?: "Unknown error"),
+              "errorType" to e.javaClass.simpleName
+            )
           )
         )
       }

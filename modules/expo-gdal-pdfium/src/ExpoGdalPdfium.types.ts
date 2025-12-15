@@ -42,6 +42,30 @@ export type DriversListResponse = {
   } | null;
 };
 
+export type ReadGeoPDFResponse = {
+  msg: string;
+  code: string;
+  error: boolean;
+  result: {
+    filePath?: string;
+    width?: string;
+    height?: string;
+    bandCount?: string;
+    driver?: string;
+    projection?: string;
+    geoTransform?: string[];
+    bands?: Array<{
+      bandNumber: string;
+      dataType: string;
+      blockWidth: string;
+      blockHeight: string;
+    }>;
+    errorDetails?: string;
+    errorType?: string;
+    [key: string]: any;
+  } | null;
+};
+
 export type ExpoGdalPdfiumViewProps = {
   url: string;
   onLoad: (event: { nativeEvent: OnLoadEventPayload }) => void;
