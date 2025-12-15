@@ -12,6 +12,7 @@ export default function ReadGeoPDFScreen({ navigation }: any) {
   const [loadingRender, setLoadingRender] = useState(false);
   const [imagePath, setImagePath] = useState<string | null>(null);
   const [renderError, setRenderError] = useState<string | null>(null);
+  const [renderMetadata, setRenderMetadata] = useState<RenderGeoPDFResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Load the local PDF asset on component mount
@@ -161,13 +162,16 @@ export default function ReadGeoPDFScreen({ navigation }: any) {
 
       if (result.error) {
         setRenderError(result.msg + (result.result?.errorDetails ? `: ${result.result.errorDetails}` : ''));
+        setRenderMetadata(null);
       } else if (result.result?.outputPath) {
         // Set image path with file:// prefix for React Native Image component
         const imageUri = result.result.outputPath.startsWith('file://') 
           ? result.result.outputPath 
           : `file://${result.result.outputPath}`;
         setImagePath(imageUri);
+        setRenderMetadata(result);
         console.log('Image path set to:', imageUri);
+        console.log('Render metadata:', JSON.stringify(result.result, null, 2));
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -271,6 +275,66 @@ export default function ReadGeoPDFScreen({ navigation }: any) {
               style={styles.renderedImage}
               resizeMode="contain"
             />
+            
+            {renderMetadata?.result && (
+              <View style={styles.metadataContainer}>
+                <Text style={styles.metadataTitle}>Image Coordinates:</Text>
+                
+                {renderMetadata.result.topLeft && (
+                  <View style={styles.coordinateRow}>
+                    <Text style={styles.coordinateLabel}>Top-Left:</Text>
+                    <Text style={styles.coordinateValue}>
+                      ({renderMetadata.result.topLeft.x}, {renderMetadata.result.topLeft.y})
+                    </Text>
+                  </View>
+                )}
+                
+                {renderMetadata.result.topRight && (
+                  <View style={styles.coordinateRow}>
+                    <Text style={styles.coordinateLabel}>Top-Right:</Text>
+                    <Text style={styles.coordinateValue}>
+                      ({renderMetadata.result.topRight.x}, {renderMetadata.result.topRight.y})
+                    </Text>
+                  </View>
+                )}
+                
+                {renderMetadata.result.bottomLeft && (
+                  <View style={styles.coordinateRow}>
+                    <Text style={styles.coordinateLabel}>Bottom-Left:</Text>
+                    <Text style={styles.coordinateValue}>
+                      ({renderMetadata.result.bottomLeft.x}, {renderMetadata.result.bottomLeft.y})
+                    </Text>
+                  </View>
+                )}
+                
+                {renderMetadata.result.bottomRight && (
+                  <View style={styles.coordinateRow}>
+                    <Text style={styles.coordinateLabel}>Bottom-Right:</Text>
+                    <Text style={styles.coordinateValue}>
+                      ({renderMetadata.result.bottomRight.x}, {renderMetadata.result.bottomRight.y})
+                    </Text>
+                  </View>
+                )}
+                
+                {renderMetadata.result.center && (
+                  <View style={styles.coordinateRow}>
+                    <Text style={styles.coordinateLabel}>Center:</Text>
+                    <Text style={styles.coordinateValue}>
+                      ({renderMetadata.result.center.x}, {renderMetadata.result.center.y})
+                    </Text>
+                  </View>
+                )}
+                
+                {renderMetadata.result.width && renderMetadata.result.height && (
+                  <View style={styles.coordinateRow}>
+                    <Text style={styles.coordinateLabel}>Dimensions:</Text>
+                    <Text style={styles.coordinateValue}>
+                      {renderMetadata.result.width} x {renderMetadata.result.height} pixels
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
           </View>
         )}
 
@@ -522,6 +586,40 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#e0e0e0',
+  },
+  metadataContainer: {
+    marginTop: 20,
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  metadataTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+  },
+  coordinateRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingVertical: 4,
+  },
+  coordinateLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    flex: 1,
+  },
+  coordinateValue: {
+    fontSize: 14,
+    color: '#333',
+    fontFamily: 'monospace',
+    flex: 2,
+    textAlign: 'right',
   },
 });
 

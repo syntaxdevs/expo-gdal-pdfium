@@ -340,7 +340,33 @@ class ExpoGdalPdfiumModule : Module() {
           val height = dataset.GetRasterYSize()
           val bandCount = dataset.GetRasterCount()
           
+          // Get geotransform for coordinate calculations
+          val geoTransform = DoubleArray(6)
+          dataset.GetGeoTransform(geoTransform)
+          
           Log.i("ExpoGdalPdfium", "Dataset dimensions: ${width}x${height}, bands: $bandCount")
+          Log.i("ExpoGdalPdfium", "GeoTransform: ${geoTransform.joinToString(", ")}")
+          
+          // Calculate corner and center coordinates from GeoTransform
+          // GeoTransform format: [topLeftX, pixelWidth, rotationX, topLeftY, rotationY, pixelHeight]
+          val topLeftX = geoTransform[0]
+          val topLeftY = geoTransform[3]
+          val pixelWidth = geoTransform[1]
+          val pixelHeight = geoTransform[5]  // Usually negative for north-up images
+          
+          // Calculate corners (assuming no rotation, i.e., geoTransform[2] and geoTransform[4] are 0)
+          val topRightX = topLeftX + width * pixelWidth
+          val topRightY = topLeftY
+          
+          val bottomLeftX = topLeftX
+          val bottomLeftY = topLeftY + height * pixelHeight
+          
+          val bottomRightX = topLeftX + width * pixelWidth
+          val bottomRightY = topLeftY + height * pixelHeight
+          
+          // Calculate center coordinates
+          val centerX = topLeftX + (width / 2.0) * pixelWidth
+          val centerY = topLeftY + (height / 2.0) * pixelHeight
           
           // Read raster data directly and convert to PNG using Android Bitmap API
           // This approach doesn't require GDAL's PNG driver
@@ -473,7 +499,15 @@ class ExpoGdalPdfiumModule : Module() {
                 false,
                 mapOf(
                   "inputPath" to inputPath,
-                  "outputPath" to outputPath
+                  "outputPath" to outputPath,
+                  "width" to width.toString(),
+                  "height" to height.toString(),
+                  "geoTransform" to geoTransform.map { it.toString() },
+                  "topLeft" to mapOf("x" to topLeftX.toString(), "y" to topLeftY.toString()),
+                  "topRight" to mapOf("x" to topRightX.toString(), "y" to topRightY.toString()),
+                  "bottomLeft" to mapOf("x" to bottomLeftX.toString(), "y" to bottomLeftY.toString()),
+                  "bottomRight" to mapOf("x" to bottomRightX.toString(), "y" to bottomRightY.toString()),
+                  "center" to mapOf("x" to centerX.toString(), "y" to centerY.toString())
                 )
               )
             )

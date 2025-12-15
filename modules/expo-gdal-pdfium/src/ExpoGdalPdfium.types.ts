@@ -73,6 +73,29 @@ export type RenderGeoPDFResponse = {
   result: {
     inputPath?: string;
     outputPath?: string;
+    width?: string;
+    height?: string;
+    geoTransform?: string[];
+    topLeft?: {
+      x: string;
+      y: string;
+    };
+    topRight?: {
+      x: string;
+      y: string;
+    };
+    bottomLeft?: {
+      x: string;
+      y: string;
+    };
+    bottomRight?: {
+      x: string;
+      y: string;
+    };
+    center?: {
+      x: string;
+      y: string;
+    };
     errorDetails?: string;
     errorType?: string;
     [key: string]: any;
