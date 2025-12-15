@@ -1,10 +1,13 @@
 package expo.modules.gdalpdfium
 
 import android.util.Log
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import java.net.URL
+import java.io.FileOutputStream
 
 // GDAL Java bindings import
 // Standard GDAL Java bindings use: org.gdal.gdal.gdal
@@ -12,6 +15,8 @@ import org.gdal.gdal.gdal
 import org.gdal.gdal.Driver
 import org.gdal.gdal.Dataset
 import org.gdal.gdal.Band
+import org.gdal.gdal.TranslateOptions
+import java.util.Vector
 
 class ExpoGdalPdfiumModule : Module() {
   companion object {
@@ -294,6 +299,226 @@ class ExpoGdalPdfiumModule : Module() {
         promise.resolve(
           createResponseMap(
             "Error reading GeoPDF: ${e.message}",
+            "ERROR",
+            true,
+            mapOf(
+              "errorDetails" to (e.message ?: "Unknown error"),
+              "errorType" to e.javaClass.simpleName
+            )
+          )
+        )
+      }
+    }
+
+    // GDAL Render GeoPDF to PNG Function
+    // Renders a GeoPDF file to a PNG image file
+    AsyncFunction("renderGeoPDFToPng") { inputPath: String, outputPath: String, promise: Promise ->
+      try {
+        Log.i("ExpoGdalPdfium", "Rendering GeoPDF to PNG: $inputPath -> $outputPath")
+        
+        // Register all drivers first
+        gdal.AllRegister()
+        
+        // Open the GeoPDF file
+        val dataset: Dataset? = gdal.Open(inputPath)
+        
+        if (dataset == null) {
+          promise.resolve(
+            createResponseMap(
+              "Failed to open GeoPDF file for rendering",
+              "FILE_NOT_FOUND",
+              true,
+              mapOf("errorDetails" to "Could not open file: $inputPath")
+            )
+          )
+          return@AsyncFunction
+        }
+        
+        try {
+          // Get dataset dimensions
+          val width = dataset.GetRasterXSize()
+          val height = dataset.GetRasterYSize()
+          val bandCount = dataset.GetRasterCount()
+          
+          Log.i("ExpoGdalPdfium", "Dataset dimensions: ${width}x${height}, bands: $bandCount")
+          
+          // Read raster data directly and convert to PNG using Android Bitmap API
+          // This approach doesn't require GDAL's PNG driver
+          
+          // Determine bitmap config based on band count
+          val bitmapConfig: Bitmap.Config = when {
+            bandCount >= 3 -> Bitmap.Config.ARGB_8888  // RGB or RGBA
+            bandCount == 1 -> Bitmap.Config.ALPHA_8     // Grayscale
+            else -> Bitmap.Config.ARGB_8888
+          }
+          
+          // Create bitmap
+          val bitmap = Bitmap.createBitmap(width, height, bitmapConfig)
+          
+          // Read bands and populate bitmap
+          if (bandCount >= 3) {
+            // RGB or RGBA image
+            val redBand: Band? = dataset.GetRasterBand(1)
+            val greenBand: Band? = dataset.GetRasterBand(2)
+            val blueBand: Band? = dataset.GetRasterBand(3)
+            val alphaBand: Band? = if (bandCount >= 4) dataset.GetRasterBand(4) else null
+            
+            if (redBand == null || greenBand == null || blueBand == null) {
+              promise.resolve(
+                createResponseMap(
+                  "Failed to render GeoPDF to PNG",
+                  "RENDER_ERROR",
+                  true,
+                  mapOf("errorDetails" to "Could not read RGB bands from dataset")
+                )
+              )
+              return@AsyncFunction
+            }
+            
+            // Read raster data for each band
+            val redData = ByteArray(width * height)
+            val greenData = ByteArray(width * height)
+            val blueData = ByteArray(width * height)
+            val alphaData = if (alphaBand != null) ByteArray(width * height) else null
+            
+            redBand.ReadRaster(0, 0, width, height, redData)
+            greenBand.ReadRaster(0, 0, width, height, greenData)
+            blueBand.ReadRaster(0, 0, width, height, blueData)
+            if (alphaBand != null && alphaData != null) {
+              alphaBand.ReadRaster(0, 0, width, height, alphaData)
+            }
+            
+            // Convert to ARGB format for bitmap
+            val pixels = IntArray(width * height)
+            for (y in 0 until height) {
+              for (x in 0 until width) {
+                val idx = y * width + x
+                val r = redData[idx].toInt() and 0xFF
+                val g = greenData[idx].toInt() and 0xFF
+                val b = blueData[idx].toInt() and 0xFF
+                val a = if (alphaData != null) alphaData[idx].toInt() and 0xFF else 255
+                pixels[idx] = (a shl 24) or (r shl 16) or (g shl 8) or b
+              }
+            }
+            
+            bitmap.setPixels(pixels, 0, width, 0, 0, width, height)
+            
+          } else if (bandCount == 1) {
+            // Grayscale image - convert to RGB
+            val grayBand: Band? = dataset.GetRasterBand(1)
+            if (grayBand == null) {
+              promise.resolve(
+                createResponseMap(
+                  "Failed to render GeoPDF to PNG",
+                  "RENDER_ERROR",
+                  true,
+                  mapOf("errorDetails" to "Could not read grayscale band from dataset")
+                )
+              )
+              return@AsyncFunction
+            }
+            
+            val grayData = ByteArray(width * height)
+            grayBand.ReadRaster(0, 0, width, height, grayData)
+            
+            // Convert grayscale to RGB
+            val pixels = IntArray(width * height)
+            for (y in 0 until height) {
+              for (x in 0 until width) {
+                val idx = y * width + x
+                val gray = grayData[idx].toInt() and 0xFF
+                pixels[idx] = (255 shl 24) or (gray shl 16) or (gray shl 8) or gray
+              }
+            }
+            
+            bitmap.setPixels(pixels, 0, width, 0, 0, width, height)
+          } else {
+            promise.resolve(
+              createResponseMap(
+                "Failed to render GeoPDF to PNG",
+                "RENDER_ERROR",
+                true,
+                mapOf("errorDetails" to "Unsupported band count: $bandCount")
+              )
+            )
+            return@AsyncFunction
+          }
+          
+          // Save bitmap as PNG file
+          try {
+            val outputFile = java.io.File(outputPath)
+            val fos = FileOutputStream(outputFile)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
+            fos.flush()
+            fos.close()
+            
+            if (!outputFile.exists() || outputFile.length() == 0L) {
+              promise.resolve(
+                createResponseMap(
+                  "Failed to render GeoPDF to PNG",
+                  "RENDER_ERROR",
+                  true,
+                  mapOf("errorDetails" to "Failed to write PNG file: $outputPath")
+                )
+              )
+              return@AsyncFunction
+            }
+            
+            Log.i("ExpoGdalPdfium", "Successfully rendered PNG: $outputPath (size: ${outputFile.length()} bytes)")
+            
+            promise.resolve(
+              createResponseMap(
+                "GeoPDF rendered to PNG successfully",
+                "SUCCESS",
+                false,
+                mapOf(
+                  "inputPath" to inputPath,
+                  "outputPath" to outputPath
+                )
+              )
+            )
+          } catch (e: Exception) {
+            Log.e("ExpoGdalPdfium", "Error writing PNG file", e)
+            promise.resolve(
+              createResponseMap(
+                "Failed to render GeoPDF to PNG",
+                "RENDER_ERROR",
+                true,
+                mapOf("errorDetails" to "Error writing PNG file: ${e.message}")
+              )
+            )
+          } finally {
+            bitmap.recycle()
+          }
+        } finally {
+          // Close the input dataset to free resources
+          dataset.delete()
+        }
+      } catch (e: ClassNotFoundException) {
+        Log.e("ExpoGdalPdfium", "GDAL classes not found", e)
+        promise.resolve(
+          createResponseMap(
+            "GDAL classes not found",
+            "CLASS_NOT_FOUND",
+            true,
+            mapOf("errorDetails" to (e.message ?: "Unknown error"))
+          )
+        )
+      } catch (e: UnsatisfiedLinkError) {
+        Log.e("ExpoGdalPdfium", "GDAL native library not loaded", e)
+        promise.resolve(
+          createResponseMap(
+            "GDAL native library not loaded",
+            "NATIVE_LIBRARY_ERROR",
+            true,
+            mapOf("errorDetails" to (e.message ?: "Unknown error"))
+          )
+        )
+      } catch (e: Exception) {
+        Log.e("ExpoGdalPdfium", "Error rendering GeoPDF", e)
+        promise.resolve(
+          createResponseMap(
+            "Error rendering GeoPDF: ${e.message}",
             "ERROR",
             true,
             mapOf(

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, Button, ScrollView, ActivityIndicator, TextInput, Alert } from 'react-native';
-import { readGeoPDF, ReadGeoPDFResponse } from '../modules/expo-gdal-pdfium';
+import { StyleSheet, Text, View, Button, ScrollView, ActivityIndicator, TextInput, Alert, Image } from 'react-native';
+import { readGeoPDF, ReadGeoPDFResponse, renderGeoPDFToPng, RenderGeoPDFResponse } from '../modules/expo-gdal-pdfium';
 import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 
@@ -9,6 +9,9 @@ export default function ReadGeoPDFScreen({ navigation }: any) {
   const [pdfInfo, setPdfInfo] = useState<ReadGeoPDFResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingAsset, setLoadingAsset] = useState(false);
+  const [loadingRender, setLoadingRender] = useState(false);
+  const [imagePath, setImagePath] = useState<string | null>(null);
+  const [renderError, setRenderError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Load the local PDF asset on component mount
@@ -112,6 +115,72 @@ export default function ReadGeoPDFScreen({ navigation }: any) {
     }
   };
 
+  const handleRenderGeoPDF = async () => {
+    if (!filePath.trim()) {
+      Alert.alert('Error', 'No PDF file loaded');
+      return;
+    }
+
+    setLoadingRender(true);
+    setRenderError(null);
+    setImagePath(null);
+
+    // Remove file:// prefix if present (GDAL needs plain file system path)
+    let gdalPath = filePath;
+    if (gdalPath.startsWith('file://')) {
+      gdalPath = gdalPath.replace('file://', '');
+    }
+
+    // Output PNG path
+    const outputPath = `${FileSystem.documentDirectory}HCDA_FATIMA.png`;
+    let gdalOutputPath = outputPath;
+    if (gdalOutputPath.startsWith('file://')) {
+      gdalOutputPath = gdalOutputPath.replace('file://', '');
+    }
+
+    console.log('=== GDAL renderGeoPDFToPng() called ===');
+    console.log('Input path:', gdalPath);
+    console.log('Output path:', gdalOutputPath);
+
+    try {
+      const result: RenderGeoPDFResponse = await renderGeoPDFToPng(gdalPath, gdalOutputPath);
+      console.log('=== GDAL Render GeoPDF Result ===');
+      console.log('Full response:', JSON.stringify(result, null, 2));
+      console.log('Status Code:', result.code);
+      console.log('Message:', result.msg);
+      console.log('Error:', result.error);
+
+      if (result.result) {
+        console.log('Input Path:', result.result.inputPath);
+        console.log('Output Path:', result.result.outputPath);
+        if (result.result.errorDetails) {
+          console.log('Error Details:', result.result.errorDetails);
+        }
+      }
+      console.log('================================');
+
+      if (result.error) {
+        setRenderError(result.msg + (result.result?.errorDetails ? `: ${result.result.errorDetails}` : ''));
+      } else if (result.result?.outputPath) {
+        // Set image path with file:// prefix for React Native Image component
+        const imageUri = result.result.outputPath.startsWith('file://') 
+          ? result.result.outputPath 
+          : `file://${result.result.outputPath}`;
+        setImagePath(imageUri);
+        console.log('Image path set to:', imageUri);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      console.error('=== Error rendering GeoPDF ===');
+      console.error('Error:', err);
+      console.error('Error message:', errorMessage);
+      console.error('===================================');
+      setRenderError(errorMessage);
+    } finally {
+      setLoadingRender(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -144,6 +213,15 @@ export default function ReadGeoPDFScreen({ navigation }: any) {
 
         <View style={styles.buttonContainer}>
           <Button
+            title={loadingRender ? "Rendering..." : "Render & Show GeoPDF Image"}
+            onPress={handleRenderGeoPDF}
+            disabled={loadingRender || loadingAsset || !filePath}
+            color="#4CAF50"
+          />
+        </View>
+
+        <View style={styles.buttonContainer}>
+          <Button
             title="Back to Main"
             onPress={() => navigation.goBack()}
             color="#666"
@@ -164,10 +242,35 @@ export default function ReadGeoPDFScreen({ navigation }: any) {
           </View>
         )}
 
+        {loadingRender && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#4CAF50" />
+            <Text style={styles.loadingText}>Rendering GeoPDF to PNG...</Text>
+          </View>
+        )}
+
         {error && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorTitle}>Error:</Text>
             <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
+        {renderError && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorTitle}>Render Error:</Text>
+            <Text style={styles.errorText}>{renderError}</Text>
+          </View>
+        )}
+
+        {imagePath && (
+          <View style={styles.imageContainer}>
+            <Text style={styles.imageTitle}>GeoPDF Rendered Image:</Text>
+            <Image
+              source={{ uri: imagePath }}
+              style={styles.renderedImage}
+              resizeMode="contain"
+            />
           </View>
         )}
 
@@ -401,6 +504,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     fontFamily: 'monospace',
+  },
+  imageContainer: {
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  imageTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+  },
+  renderedImage: {
+    width: '100%',
+    height: 400,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
 });
 

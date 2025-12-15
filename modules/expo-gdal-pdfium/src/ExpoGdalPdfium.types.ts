@@ -66,6 +66,19 @@ export type ReadGeoPDFResponse = {
   } | null;
 };
 
+export type RenderGeoPDFResponse = {
+  msg: string;
+  code: string;
+  error: boolean;
+  result: {
+    inputPath?: string;
+    outputPath?: string;
+    errorDetails?: string;
+    errorType?: string;
+    [key: string]: any;
+  } | null;
+};
+
 export type ExpoGdalPdfiumViewProps = {
   url: string;
   onLoad: (event: { nativeEvent: OnLoadEventPayload }) => void;
