@@ -16,6 +16,8 @@ import org.gdal.gdal.Driver
 import org.gdal.gdal.Dataset
 import org.gdal.gdal.Band
 import org.gdal.gdal.TranslateOptions
+import org.gdal.osr.SpatialReference
+import org.gdal.osr.CoordinateTransformation
 import java.util.Vector
 
 class ExpoGdalPdfiumModule : Module() {
@@ -368,6 +370,84 @@ class ExpoGdalPdfiumModule : Module() {
           val centerX = topLeftX + (width / 2.0) * pixelWidth
           val centerY = topLeftY + (height / 2.0) * pixelHeight
           
+          // Transform coordinates from native CRS to WGS84 (EPSG:4326)
+          // Try multiple methods to get projection WKT from dataset
+          var projectionWkt: String? = dataset.GetProjectionRef()
+          if (projectionWkt == null || projectionWkt.isEmpty()) {
+            projectionWkt = dataset.GetProjection()
+          }
+          
+          // Variables to store WGS84 coordinates (longitude, latitude)
+          var topLeftLng = topLeftX
+          var topLeftLat = topLeftY
+          var topRightLng = topRightX
+          var topRightLat = topRightY
+          var bottomLeftLng = bottomLeftX
+          var bottomLeftLat = bottomLeftY
+          var bottomRightLng = bottomRightX
+          var bottomRightLat = bottomRightY
+          var centerLng = centerX
+          var centerLat = centerY
+          
+          // Only transform if projection is available
+          if (projectionWkt != null && projectionWkt.isNotEmpty()) {
+            try {
+              Log.i("ExpoGdalPdfium", "Projection WKT: ${projectionWkt.take(200)}...") // Log first 200 chars
+              
+              // Create source Spatial Reference System from WKT
+              val sourceSRS = SpatialReference()
+              val importResult = sourceSRS.ImportFromWkt(projectionWkt)
+              if (importResult != 0) {
+                Log.w("ExpoGdalPdfium", "Failed to import source SRS from WKT. Error code: $importResult")
+                throw Exception("Failed to import source SRS from WKT")
+              }
+              
+              // Create target SRS (WGS84, EPSG:4326) using WKT instead of EPSG code
+              // This avoids requiring PROJ database support
+              val wgs84Wkt = "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433]]"
+              val targetSRS = SpatialReference()
+              val wktResult = targetSRS.ImportFromWkt(wgs84Wkt)
+              if (wktResult != 0) {
+                Log.w("ExpoGdalPdfium", "Failed to import target SRS (WGS84) from WKT. Error code: $wktResult")
+                throw Exception("Failed to import target SRS (WGS84) from WKT")
+              }
+              
+              // Create coordinate transformation
+              val transform = CoordinateTransformation(sourceSRS, targetSRS)
+              
+              // Transform all coordinate points
+              // TransformPoint returns [longitude, latitude, z] array
+              val topLeftTransformed = transform.TransformPoint(topLeftX, topLeftY, 0.0)
+              topLeftLng = topLeftTransformed[0]
+              topLeftLat = topLeftTransformed[1]
+              
+              val topRightTransformed = transform.TransformPoint(topRightX, topRightY, 0.0)
+              topRightLng = topRightTransformed[0]
+              topRightLat = topRightTransformed[1]
+              
+              val bottomLeftTransformed = transform.TransformPoint(bottomLeftX, bottomLeftY, 0.0)
+              bottomLeftLng = bottomLeftTransformed[0]
+              bottomLeftLat = bottomLeftTransformed[1]
+              
+              val bottomRightTransformed = transform.TransformPoint(bottomRightX, bottomRightY, 0.0)
+              bottomRightLng = bottomRightTransformed[0]
+              bottomRightLat = bottomRightTransformed[1]
+              
+              val centerTransformed = transform.TransformPoint(centerX, centerY, 0.0)
+              centerLng = centerTransformed[0]
+              centerLat = centerTransformed[1]
+              
+              Log.i("ExpoGdalPdfium", "Coordinates transformed to WGS84 (EPSG:4326)")
+              Log.i("ExpoGdalPdfium", "TopLeft WGS84: ($topLeftLng, $topLeftLat)")
+            } catch (e: Exception) {
+              Log.e("ExpoGdalPdfium", "Failed to transform coordinates to WGS84", e)
+              Log.w("ExpoGdalPdfium", "Error details: ${e.message}, ${e.javaClass.simpleName}. Using native CRS coordinates.")
+              // If transformation fails, use original coordinates (already set above)
+            }
+          } else {
+            Log.w("ExpoGdalPdfium", "No projection information available. Using native coordinates.")
+          }
+          
           // Read raster data directly and convert to PNG using Android Bitmap API
           // This approach doesn't require GDAL's PNG driver
           
@@ -503,11 +583,11 @@ class ExpoGdalPdfiumModule : Module() {
                   "width" to width.toString(),
                   "height" to height.toString(),
                   "geoTransform" to geoTransform.map { it.toString() },
-                  "topLeft" to mapOf("x" to topLeftX.toString(), "y" to topLeftY.toString()),
-                  "topRight" to mapOf("x" to topRightX.toString(), "y" to topRightY.toString()),
-                  "bottomLeft" to mapOf("x" to bottomLeftX.toString(), "y" to bottomLeftY.toString()),
-                  "bottomRight" to mapOf("x" to bottomRightX.toString(), "y" to bottomRightY.toString()),
-                  "center" to mapOf("x" to centerX.toString(), "y" to centerY.toString())
+                  "topLeft" to mapOf("x" to topLeftLng.toString(), "y" to topLeftLat.toString()),
+                  "topRight" to mapOf("x" to topRightLng.toString(), "y" to topRightLat.toString()),
+                  "bottomLeft" to mapOf("x" to bottomLeftLng.toString(), "y" to bottomLeftLat.toString()),
+                  "bottomRight" to mapOf("x" to bottomRightLng.toString(), "y" to bottomRightLat.toString()),
+                  "center" to mapOf("x" to centerLng.toString(), "y" to centerLat.toString())
                 )
               )
             )

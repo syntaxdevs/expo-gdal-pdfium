@@ -1,0 +1,32 @@
+# Build artifacts
+android/build/
+ios/build/
+*.log
+
+# Dependencies
+node_modules/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Test files (if any)
+__tests__/
+*.test.ts
+*.test.tsx
+
+# Temporary files
+*.tmp
+*.temp
+
