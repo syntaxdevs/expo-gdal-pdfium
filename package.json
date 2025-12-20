@@ -1,24 +1,52 @@
 {
-  "name": "expo-custom-local-module-example",
-  "version": "1.0.0",
+  "name": "expo-gdal-pdfium",
+  "version": "0.7.6",
+  "description": "Expo module for GDAL/PDFium GeoPDF processing with coordinate transformation to WGS84",
   "main": "index.ts",
-  "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web"
+  "types": "index.ts",
+  "exports": {
+    ".": "./index.ts"
   },
-  "dependencies": {
-    "expo": "~53.0.0",
-    "expo-asset": "~11.1.7",
-    "expo-file-system": "~18.1.11",
-    "expo-status-bar": "~2.0.0",
-    "react": "19.0.0",
-    "react-native": "0.79.0"
+  "scripts": {},
+  "keywords": [
+    "react-native",
+    "expo",
+    "expo-module",
+    "gdal",
+    "pdfium",
+    "geopdf",
+    "pdf",
+    "geospatial",
+    "coordinate-transformation",
+    "wgs84"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syntaxdevs/expo-gdal-pdfium.git"
   },
-  "devDependencies": {
-    "@types/react": "~19.0.0",
-    "typescript": "~5.3.3"
+  "bugs": {
+    "url": "https://github.com/syntaxdevs/expo-gdal-pdfium/issues"
   },
-  "private": true
+  "homepage": "https://github.com/syntaxdevs/expo-gdal-pdfium#readme",
+  "files": [
+    "android",
+    "ios",
+    "src",
+    "expo-module.config.json",
+    "index.ts",
+    "package.json"
+  ],
+  "peerDependencies": {
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  }
 }
+
+
+
+
+
+
