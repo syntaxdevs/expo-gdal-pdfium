@@ -777,6 +777,52 @@ class ExpoGdalPdfiumModule : Module() {
       }
     }
 
+    // Extract raw metadata from PDF file (for GEODETIC PDFs)
+    // Reads PDF file content and uses regex patterns to extract geospatial structures
+    AsyncFunction("extractRawMetadata") { filePath: String, promise: Promise ->
+      try {
+        Log.i("ExpoGdalPdfium", "Extracting raw metadata from PDF: $filePath")
+        
+        val pdfFile = File(filePath)
+        if (!pdfFile.exists() || !pdfFile.canRead()) {
+          promise.resolve(
+            createResponseMap(
+              "PDF file not accessible",
+              "FILE_NOT_FOUND",
+              true,
+              mapOf("errorDetails" to "Could not read file: $filePath")
+            )
+          )
+          return@AsyncFunction
+        }
+        
+        // Extract geospatial structures from PDF
+        val structures = extractGeospatialStructures(pdfFile)
+        
+        promise.resolve(
+          createResponseMap(
+            "Raw metadata extracted successfully",
+            "SUCCESS",
+            false,
+            mapOf(
+              "filePath" to filePath,
+              "geospatialStructures" to structures
+            )
+          )
+        )
+      } catch (e: Exception) {
+        Log.e("ExpoGdalPdfium", "Error extracting raw metadata", e)
+        promise.resolve(
+          createResponseMap(
+            "Error extracting raw metadata: ${e.message}",
+            "ERROR",
+            true,
+            mapOf("errorDetails" to (e.message ?: "Unknown error"), "errorType" to e.javaClass.simpleName)
+          )
+        )
+      }
+    }
+
     // Enables the module to be used as a native view. Definition components that are accepted as part of
     // the view definition: Prop, Events.
     View(ExpoGdalPdfiumView::class) {
@@ -1310,6 +1356,373 @@ class ExpoGdalPdfiumModule : Module() {
       "error" to error,
       "result" to resultMap
     )
+  }
+
+  // Extract geospatial structures from PDF file (LGIDict, Registration, CTM)
+  private fun extractGeospatialStructures(pdfFile: File): Map<String, Any> {
+    val structures = mutableMapOf<String, Any>()
+    val registrationArrays = mutableListOf<Map<String, Any>>()
+    val ctmMatrices = mutableListOf<Map<String, Any>>()
+    
+    try {
+      Log.i("ExpoGdalPdfium", "Starting geospatial structure extraction from PDF: ${pdfFile.absolutePath}")
+      Log.i("ExpoGdalPdfium", "PDF file size: ${pdfFile.length()} bytes")
+      
+      // Read PDF file as bytes (limit to first 2MB to avoid memory issues)
+      val maxBytes = 2 * 1024 * 1024 // 2MB
+      val fileSize = pdfFile.length().toInt()
+      val bytesToRead = minOf(fileSize, maxBytes)
+      
+      Log.i("ExpoGdalPdfium", "Reading first $bytesToRead bytes of PDF file")
+      
+      val fileBytes = ByteArray(bytesToRead)
+      val raf = RandomAccessFile(pdfFile, "r")
+      raf.readFully(fileBytes, 0, bytesToRead)
+      raf.close()
+      
+      // Convert to string for pattern matching
+      val content = String(fileBytes, StandardCharsets.ISO_8859_1)
+      Log.i("ExpoGdalPdfium", "PDF content length: ${content.length} characters")
+      
+      // Search for LGIDict objects (including object 13 pattern)
+      // Pattern: /LGIDict or << /Type /LGIDict
+      val lgidictPattern = Pattern.compile("(?:/LGIDict|<<\\s*/Type\\s*/LGIDict)")
+      val lgidictMatcher = lgidictPattern.matcher(content)
+      
+      var lgidictCount = 0
+      var searchStart = 0
+      while (lgidictMatcher.find(searchStart)) {
+        lgidictCount++
+        val lgidictStart = lgidictMatcher.start()
+        Log.i("ExpoGdalPdfium", "Found LGIDict #$lgidictCount at position $lgidictStart")
+        
+        // Find the end of this LGIDict object (look for >> or end of object)
+        val lgidictEnd = findObjectEnd(content, lgidictStart)
+        if (lgidictEnd > lgidictStart) {
+          val lgidictContent = content.substring(lgidictStart, lgidictEnd)
+          Log.i("ExpoGdalPdfium", "LGIDict #$lgidictCount content length: ${lgidictContent.length} characters")
+          
+          // Try to extract Registration array
+          val registration = extractRegistrationArray(lgidictContent)
+          if (registration != null) {
+            registrationArrays.add(registration)
+            Log.i("ExpoGdalPdfium", "✅ Found Registration array in LGIDict #$lgidictCount")
+          } else {
+            Log.w("ExpoGdalPdfium", "⚠️ No Registration array found in LGIDict #$lgidictCount")
+          }
+          
+          // Try to extract CTM matrix
+          val ctm = extractCTMFromLGIDict(lgidictContent)
+          if (ctm != null) {
+            ctmMatrices.add(ctm)
+            Log.i("ExpoGdalPdfium", "✅ Found CTM matrix in LGIDict #$lgidictCount")
+          } else {
+            Log.w("ExpoGdalPdfium", "⚠️ No CTM matrix found in LGIDict #$lgidictCount")
+          }
+          
+          searchStart = lgidictEnd
+        } else {
+          Log.w("ExpoGdalPdfium", "⚠️ Could not find end of LGIDict #$lgidictCount")
+          searchStart = lgidictMatcher.end()
+        }
+      }
+      
+      // Always try searching for /Registration directly (even if LGIDict was found)
+      // Some PDFs may have Registration outside of LGIDict
+      Log.i("ExpoGdalPdfium", "Searching for /Registration pattern directly in PDF content...")
+      val directRegistrationPattern = Pattern.compile("/Registration\\s*\\[", Pattern.CASE_INSENSITIVE)
+      val directRegMatcher = directRegistrationPattern.matcher(content)
+      var directRegCount = 0
+      var searchPos = 0
+      while (directRegMatcher.find(searchPos)) {
+        directRegCount++
+        Log.i("ExpoGdalPdfium", "Found /Registration pattern #$directRegCount at position ${directRegMatcher.start()}")
+        val regStart = directRegMatcher.start()
+        // Search backwards to find the start of the object (might be in a dictionary)
+        var contextStart = maxOf(0, regStart - 200) // Look back 200 chars for context
+        val regEnd = findObjectEnd(content, regStart)
+        if (regEnd > regStart) {
+          val regContent = content.substring(contextStart, regEnd)
+          val registration = extractRegistrationArray(regContent)
+          if (registration != null) {
+            registrationArrays.add(registration)
+            Log.i("ExpoGdalPdfium", "✅ Found Registration array #$directRegCount via direct pattern")
+            break // Use first valid registration found
+          } else {
+            Log.w("ExpoGdalPdfium", "⚠️ Registration pattern #$directRegCount found but couldn't parse")
+          }
+        }
+        searchPos = directRegMatcher.end()
+      }
+      
+      if (directRegCount == 0 && lgidictCount == 0) {
+        Log.w("ExpoGdalPdfium", "⚠️ No LGIDict objects and no /Registration patterns found in PDF")
+        // Try searching for other geospatial patterns like /LLX, /LLY, /URX, /URY
+        Log.i("ExpoGdalPdfium", "Trying alternative geospatial patterns (/LLX, /LLY, /URX, /URY)...")
+        val llxPattern = Pattern.compile("/LLX\\s+([-+]?\\d+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
+        val llyPattern = Pattern.compile("/LLY\\s+([-+]?\\d+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
+        val urxPattern = Pattern.compile("/URX\\s+([-+]?\\d+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
+        val uryPattern = Pattern.compile("/URY\\s+([-+]?\\d+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
+        
+        val llxMatcher = llxPattern.matcher(content)
+        val llyMatcher = llyPattern.matcher(content)
+        val urxMatcher = urxPattern.matcher(content)
+        val uryMatcher = uryPattern.matcher(content)
+        
+        if (llxMatcher.find() && llyMatcher.find() && urxMatcher.find() && uryMatcher.find()) {
+          try {
+            val llx = llxMatcher.group(1).toDouble()
+            val lly = llyMatcher.group(1).toDouble()
+            val urx = urxMatcher.group(1).toDouble()
+            val ury = uryMatcher.group(1).toDouble()
+            
+            Log.i("ExpoGdalPdfium", "Found bounding box: LLX=$llx, LLY=$lly, URX=$urx, URY=$ury")
+            
+            // Validate coordinates
+            if (llx >= -180 && llx <= 180 && lly >= -90 && lly <= 90 &&
+                urx >= -180 && urx <= 180 && ury >= -90 && ury <= 90) {
+              val registration = mapOf(
+                "points" to listOf(
+                  mapOf("px" to 0.0, "py" to 0.0, "longitude" to llx, "latitude" to lly),
+                  mapOf("px" to 1.0, "py" to 1.0, "longitude" to urx, "latitude" to ury)
+                ),
+                "bounds" to mapOf(
+                  "topLeft" to mapOf("longitude" to llx, "latitude" to ury),
+                  "topRight" to mapOf("longitude" to urx, "latitude" to ury),
+                  "bottomLeft" to mapOf("longitude" to llx, "latitude" to lly),
+                  "bottomRight" to mapOf("longitude" to urx, "latitude" to lly),
+                  "center" to mapOf("longitude" to (llx + urx) / 2.0, "latitude" to (lly + ury) / 2.0)
+                )
+              )
+              registrationArrays.add(registration)
+              Log.i("ExpoGdalPdfium", "✅ Created Registration array from /LLX, /LLY, /URX, /URY patterns")
+            }
+          } catch (e: Exception) {
+            Log.w("ExpoGdalPdfium", "Error parsing /LLX, /LLY, /URX, /URY: ${e.message}")
+          }
+        }
+      }
+      
+      if (registrationArrays.isNotEmpty()) {
+        structures["Registration"] = registrationArrays
+      }
+      if (ctmMatrices.isNotEmpty()) {
+        structures["CTM"] = ctmMatrices
+      }
+      
+      Log.i("ExpoGdalPdfium", "Extraction complete: ${registrationArrays.size} Registration arrays and ${ctmMatrices.size} CTM matrices")
+    } catch (e: Exception) {
+      Log.e("ExpoGdalPdfium", "Error extracting geospatial structures", e)
+      e.printStackTrace()
+    }
+    
+    return structures
+  }
+
+  // Extract Registration array from LGIDict content
+  // Supports multiple formats:
+  // 1. /Registration [ [ (px1) (py1) (lon1) (lat1) ] [ (px2) (py2) (lon2) (lat2) ] ]
+  // 2. /Registration [ [ px1 py1 lon1 lat1 ] [ px2 py2 lon2 lat2 ] ]
+  // 3. /Registration [ px1 py1 lon1 lat1 px2 py2 lon2 lat2 ]
+  private fun extractRegistrationArray(lgidictContent: String): Map<String, Any>? {
+    try {
+      Log.d("ExpoGdalPdfium", "Attempting to extract Registration array from content (${lgidictContent.length} chars)")
+      
+      // Pattern 1: With parentheses: /Registration [ [ (px1) (py1) (lon1) (lat1) ] [ (px2) (py2) (lon2) (lat2) ] ]
+      var registrationPattern = Pattern.compile(
+        "/Registration\\s*\\[\\s*\\[\\s*\\(([-+]?\\d+\\.?\\d*)\\)\\s*\\(([-+]?\\d+\\.?\\d*)\\)\\s*\\(([-+]?\\d+\\.?\\d*)\\)\\s*\\(([-+]?\\d+\\.?\\d*)\\)\\s*\\]\\s*\\[\\s*\\(([-+]?\\d+\\.?\\d*)\\)\\s*\\(([-+]?\\d+\\.?\\d*)\\)\\s*\\(([-+]?\\d+\\.?\\d*)\\)\\s*\\(([-+]?\\d+\\.?\\d*)\\)\\s*\\]\\s*\\]",
+        Pattern.CASE_INSENSITIVE
+      )
+      
+      var matcher = registrationPattern.matcher(lgidictContent)
+      if (matcher.find()) {
+        Log.i("ExpoGdalPdfium", "Found Registration array with Pattern 1 (with parentheses)")
+        return parseRegistrationPoints(matcher, true)
+      }
+      
+      // Pattern 2: Without parentheses: /Registration [ [ px1 py1 lon1 lat1 ] [ px2 py2 lon2 lat2 ] ]
+      registrationPattern = Pattern.compile(
+        "/Registration\\s*\\[\\s*\\[\\s*([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s*\\]\\s*\\[\\s*([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s*\\]\\s*\\]",
+        Pattern.CASE_INSENSITIVE
+      )
+      
+      matcher = registrationPattern.matcher(lgidictContent)
+      if (matcher.find()) {
+        Log.i("ExpoGdalPdfium", "Found Registration array with Pattern 2 (without parentheses)")
+        return parseRegistrationPoints(matcher, false)
+      }
+      
+      // Pattern 3: Single array: /Registration [ px1 py1 lon1 lat1 px2 py2 lon2 lat2 ]
+      registrationPattern = Pattern.compile(
+        "/Registration\\s*\\[\\s*([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s*\\]",
+        Pattern.CASE_INSENSITIVE
+      )
+      
+      matcher = registrationPattern.matcher(lgidictContent)
+      if (matcher.find()) {
+        Log.i("ExpoGdalPdfium", "Found Registration array with Pattern 3 (single array)")
+        return parseRegistrationPoints(matcher, false)
+      }
+      
+      // Pattern 4: More flexible - allows optional parentheses and whitespace
+      registrationPattern = Pattern.compile(
+        "/Registration\\s*\\[\\s*(?:\\[\\s*)?(?:\\()?([-+]?\\d+\\.?\\d*)(?:\\))?\\s+(?:\\()?([-+]?\\d+\\.?\\d*)(?:\\))?\\s+(?:\\()?([-+]?\\d+\\.?\\d*)(?:\\))?\\s+(?:\\()?([-+]?\\d+\\.?\\d*)(?:\\))?\\s*(?:\\]\\s*)?(?:\\[\\s*)?(?:\\()?([-+]?\\d+\\.?\\d*)(?:\\))?\\s+(?:\\()?([-+]?\\d+\\.?\\d*)(?:\\))?\\s+(?:\\()?([-+]?\\d+\\.?\\d*)(?:\\))?\\s+(?:\\()?([-+]?\\d+\\.?\\d*)(?:\\))?\\s*(?:\\]\\s*)?\\]",
+        Pattern.CASE_INSENSITIVE
+      )
+      
+      matcher = registrationPattern.matcher(lgidictContent)
+      if (matcher.find()) {
+        Log.i("ExpoGdalPdfium", "Found Registration array with Pattern 4 (flexible)")
+        return parseRegistrationPoints(matcher, false)
+      }
+      
+      Log.w("ExpoGdalPdfium", "No Registration array pattern matched")
+      // Log a sample of the content for debugging
+      val sample = lgidictContent.take(500)
+      Log.d("ExpoGdalPdfium", "Content sample (first 500 chars): $sample")
+      
+    } catch (e: Exception) {
+      Log.e("ExpoGdalPdfium", "Error extracting Registration array: ${e.message}")
+      e.printStackTrace()
+    }
+    return null
+  }
+  
+  // Helper function to parse registration points from matcher groups
+  private fun parseRegistrationPoints(matcher: java.util.regex.Matcher, hasParentheses: Boolean): Map<String, Any>? {
+    try {
+      // Parse the two registration points
+      val px1 = matcher.group(1).toDouble()
+      val py1 = matcher.group(2).toDouble()
+      val lon1 = matcher.group(3).toDouble()
+      val lat1 = matcher.group(4).toDouble()
+      
+      val px2 = matcher.group(5).toDouble()
+      val py2 = matcher.group(6).toDouble()
+      val lon2 = matcher.group(7).toDouble()
+      val lat2 = matcher.group(8).toDouble()
+      
+      Log.i("ExpoGdalPdfium", "Parsed Registration points: P1(px=$px1, py=$py1, lon=$lon1, lat=$lat1), P2(px=$px2, py=$py2, lon=$lon2, lat=$lat2)")
+      
+      // Validate coordinates are in reasonable ranges
+      if (lon1 < -180 || lon1 > 180 || lon2 < -180 || lon2 > 180 ||
+          lat1 < -90 || lat1 > 90 || lat2 < -90 || lat2 > 90) {
+        Log.w("ExpoGdalPdfium", "Registration coordinates out of valid range, but proceeding anyway")
+      }
+      
+      // Calculate bounds from the two registration points
+      // Determine which point is which corner based on pixel coordinates
+      // Typically: (px1, py1) might be top-left or bottom-left, (px2, py2) might be bottom-right or top-right
+      val topLeftLng = if (px1 < px2) lon1 else lon2
+      val topLeftLat = if (py1 < py2) lat2 else lat1
+      val bottomRightLng = if (px1 < px2) lon2 else lon1
+      val bottomRightLat = if (py1 < py2) lat1 else lat2
+      
+      // Calculate other corners (assuming rectangular bounds)
+      val topRightLng = bottomRightLng
+      val topRightLat = topLeftLat
+      val bottomLeftLng = topLeftLng
+      val bottomLeftLat = bottomRightLat
+      
+      // Calculate center
+      val centerLng = (topLeftLng + bottomRightLng) / 2.0
+      val centerLat = (topLeftLat + bottomRightLat) / 2.0
+      
+      Log.i("ExpoGdalPdfium", "Calculated bounds: TL($topLeftLng, $topLeftLat), TR($topRightLng, $topRightLat), BR($bottomRightLng, $bottomRightLat), BL($bottomLeftLng, $bottomLeftLat)")
+      
+      return mapOf(
+        "points" to listOf(
+          mapOf("px" to px1, "py" to py1, "longitude" to lon1, "latitude" to lat1),
+          mapOf("px" to px2, "py" to py2, "longitude" to lon2, "latitude" to lat2)
+        ),
+        "bounds" to mapOf(
+          "topLeft" to mapOf("longitude" to topLeftLng, "latitude" to topLeftLat),
+          "topRight" to mapOf("longitude" to topRightLng, "latitude" to topRightLat),
+          "bottomLeft" to mapOf("longitude" to bottomLeftLng, "latitude" to bottomLeftLat),
+          "bottomRight" to mapOf("longitude" to bottomRightLng, "latitude" to bottomRightLat),
+          "center" to mapOf("longitude" to centerLng, "latitude" to centerLat)
+        )
+      )
+    } catch (e: Exception) {
+      Log.e("ExpoGdalPdfium", "Error parsing Registration points: ${e.message}")
+      e.printStackTrace()
+      return null
+    }
+  }
+
+  // Extract CTM (Coordinate Transformation Matrix) from LGIDict content
+  private fun extractCTMFromLGIDict(lgidictContent: String): Map<String, Any>? {
+    try {
+      // Pattern to match CTM matrix: /CTM [ a b c d e f ] or /Matrix [ a b c d e f ]
+      val ctmPattern = Pattern.compile(
+        "(?:/CTM|/Matrix)\\s*\\[\\s*([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s+([-+]?\\d+\\.?\\d*)\\s*\\]",
+        Pattern.CASE_INSENSITIVE
+      )
+      
+      val matcher = ctmPattern.matcher(lgidictContent)
+      if (matcher.find()) {
+        val matrix = listOf(
+          matcher.group(1).toDouble(),
+          matcher.group(2).toDouble(),
+          matcher.group(3).toDouble(),
+          matcher.group(4).toDouble(),
+          matcher.group(5).toDouble(),
+          matcher.group(6).toDouble()
+        )
+        
+        return mapOf("matrix" to matrix)
+      }
+    } catch (e: Exception) {
+      Log.w("ExpoGdalPdfium", "Error extracting CTM matrix: ${e.message}")
+    }
+    return null
+  }
+
+  // Helper function to find the end of a PDF object (looks for >> or end of stream)
+  private fun findObjectEnd(content: String, startPos: Int): Int {
+    var depth = 0
+    var pos = startPos
+    var inString = false
+    var escapeNext = false
+    
+    while (pos < content.length) {
+      val char = content[pos]
+      
+      if (escapeNext) {
+        escapeNext = false
+        pos++
+        continue
+      }
+      
+      if (char == '\\') {
+        escapeNext = true
+        pos++
+        continue
+      }
+      
+      if (char == '(' && !inString) {
+        inString = true
+      } else if (char == ')' && inString) {
+        inString = false
+      } else if (!inString) {
+        if (char == '<' && pos + 1 < content.length && content[pos + 1] == '<') {
+          depth++
+          pos += 2
+          continue
+        } else if (char == '>' && pos + 1 < content.length && content[pos + 1] == '>') {
+          depth--
+          if (depth <= 0) {
+            return pos + 2
+          }
+          pos += 2
+          continue
+        }
+      }
+      
+      pos++
+    }
+    
+    return content.length
   }
 }
 

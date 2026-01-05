@@ -102,6 +102,38 @@ export type RenderGeoPDFResponse = {
   } | null;
 };
 
+export type ExtractRawMetadataResponse = {
+  msg: string;
+  code: string;
+  error: boolean;
+  result: {
+    filePath?: string;
+    geospatialStructures?: {
+      Registration?: Array<{
+        points?: Array<{
+          px: number;
+          py: number;
+          longitude: number;
+          latitude: number;
+        }>;
+        bounds?: {
+          topLeft: { longitude: number; latitude: number };
+          topRight: { longitude: number; latitude: number };
+          bottomLeft: { longitude: number; latitude: number };
+          bottomRight: { longitude: number; latitude: number };
+          center: { longitude: number; latitude: number };
+        };
+      }>;
+      CTM?: Array<{
+        matrix?: number[];
+      }>;
+    };
+    errorDetails?: string;
+    errorType?: string;
+    [key: string]: any;
+  } | null;
+};
+
 export type ExpoGdalPdfiumViewProps = {
   url: string;
   onLoad: (event: { nativeEvent: OnLoadEventPayload }) => void;

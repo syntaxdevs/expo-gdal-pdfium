@@ -1,7 +1,7 @@
 // Reexport the native module. On web, it will be resolved to ExpoGdalPdfiumModule.web.ts
 // and on native platforms to ExpoGdalPdfiumModule.ts
 import ExpoGdalPdfiumModule from './src/ExpoGdalPdfiumModule';
-import { VersionInfoResponse, DriversListResponse, ReadGeoPDFResponse, RenderGeoPDFResponse } from './src/ExpoGdalPdfium.types';
+import { VersionInfoResponse, DriversListResponse, ReadGeoPDFResponse, RenderGeoPDFResponse, ExtractRawMetadataResponse } from './src/ExpoGdalPdfium.types';
 
 export { default } from './src/ExpoGdalPdfiumModule';
 export { default as ExpoGdalPdfiumView } from './src/ExpoGdalPdfiumView';
@@ -25,4 +25,9 @@ export async function readGeoPDF(filePath: string): Promise<ReadGeoPDFResponse> 
 // Convenient wrapper function for rendering GeoPDF to PNG
 export async function renderGeoPDFToPng(inputPath: string, outputPath: string): Promise<RenderGeoPDFResponse> {
   return await ExpoGdalPdfiumModule.renderGeoPDFToPng(inputPath, outputPath);
+}
+
+// Convenient wrapper function for extracting raw metadata from PDF
+export async function extractRawMetadata(filePath: string): Promise<ExtractRawMetadataResponse> {
+  return await ExpoGdalPdfiumModule.extractRawMetadata(filePath);
 }
