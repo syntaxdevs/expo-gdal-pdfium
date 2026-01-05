@@ -1,8 +1,33 @@
-import { registerRootComponent } from 'expo';
+// Reexport the native module. On web, it will be resolved to ExpoGdalPdfiumModule.web.ts
+// and on native platforms to ExpoGdalPdfiumModule.ts
+import ExpoGdalPdfiumModule from './src/ExpoGdalPdfiumModule';
+import { VersionInfoResponse, DriversListResponse, ReadGeoPDFResponse, RenderGeoPDFResponse, ExtractRawMetadataResponse } from './src/ExpoGdalPdfium.types';
 
-import App from './App';
+export { default } from './src/ExpoGdalPdfiumModule';
+export { default as ExpoGdalPdfiumView } from './src/ExpoGdalPdfiumView';
+export * from './src/ExpoGdalPdfium.types';
 
-// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
-// It also ensures that whether you load the app in Expo Go or in a native build,
-// the environment is set up appropriately
-registerRootComponent(App);
+// Convenient wrapper function for getting GDAL version info
+export async function getVersionInfo(): Promise<VersionInfoResponse> {
+  return await ExpoGdalPdfiumModule.getVersionInfo();
+}
+
+// Convenient wrapper function for listing GDAL drivers
+export async function listDrivers(): Promise<DriversListResponse> {
+  return await ExpoGdalPdfiumModule.listDrivers();
+}
+
+// Convenient wrapper function for reading GeoPDF
+export async function readGeoPDF(filePath: string): Promise<ReadGeoPDFResponse> {
+  return await ExpoGdalPdfiumModule.readGeoPDF(filePath);
+}
+
+// Convenient wrapper function for rendering GeoPDF to PNG
+export async function renderGeoPDFToPng(inputPath: string, outputPath: string): Promise<RenderGeoPDFResponse> {
+  return await ExpoGdalPdfiumModule.renderGeoPDFToPng(inputPath, outputPath);
+}
+
+// Convenient wrapper function for extracting raw metadata from PDF
+export async function extractRawMetadata(filePath: string): Promise<ExtractRawMetadataResponse> {
+  return await ExpoGdalPdfiumModule.extractRawMetadata(filePath);
+}
