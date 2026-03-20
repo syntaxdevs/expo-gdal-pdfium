@@ -107,3 +107,35 @@ export type ExpoGdalPdfiumViewProps = {
   onLoad: (event: { nativeEvent: OnLoadEventPayload }) => void;
   style?: StyleProp<ViewStyle>;
 };
+
+export type GeoPoint = {
+  x?: string;
+  y?: string;
+};
+
+export type GeoPDFMetadata = {
+  topLeft?: GeoPoint;
+  topRight?: GeoPoint;
+  bottomLeft?: GeoPoint;
+  bottomRight?: GeoPoint;
+  center?: GeoPoint;
+  [key: string]: any;
+};
+
+export type ProcessGeoPDFImage = {
+  path?: string;
+  [key: string]: any;
+};
+
+export type ProcessGeoPDFResponse = {
+  msg: string;
+  code: string;
+  error: boolean;
+  result: {
+    image?: ProcessGeoPDFImage;
+    metadata?: GeoPDFMetadata;
+    errorDetails?: string;
+    errorType?: string;
+    [key: string]: any;
+  } | null;
+};

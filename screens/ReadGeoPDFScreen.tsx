@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, Button, ScrollView, ActivityIndicator, TextInput, Alert, Image } from 'react-native';
-import { readGeoPDF, ReadGeoPDFResponse, renderGeoPDFToPng, RenderGeoPDFResponse } from '../modules/expo-gdal-pdfium';
+import { StyleSheet, Text, View, Button, ScrollView, ActivityIndicator, TextInput, Alert, Image, Platform } from 'react-native';
+import { readGeoPDF, ReadGeoPDFResponse, renderGeoPDFToPng, RenderGeoPDFResponse, processGeoPDF, ProcessGeoPDFResponse, } from '../modules/expo-gdal-pdfium';
 import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 
@@ -14,6 +14,7 @@ export default function ReadGeoPDFScreen({ navigation }: any) {
   const [renderError, setRenderError] = useState<string | null>(null);
   const [renderMetadata, setRenderMetadata] = useState<RenderGeoPDFResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [processResult, setProcessResult] = useState<ProcessGeoPDFResponse | null>(null);
 
   // Load the local PDF asset on component mount
   useEffect(() => {
@@ -185,6 +186,68 @@ export default function ReadGeoPDFScreen({ navigation }: any) {
     }
   };
 
+  const handleProcessGeoPDF = async () => {
+    if (!filePath.trim()) {
+      Alert.alert('Error', 'No PDF file loaded');
+      return;
+    }
+
+    setLoadingRender(true);
+    setRenderError(null);
+    setImagePath(null);
+    setProcessResult(null);
+
+    let gdalPath = filePath;
+    if (gdalPath.startsWith('file://')) {
+      gdalPath = gdalPath.replace('file://', '');
+    }
+
+    const outputPath = `${FileSystem.documentDirectory}HCDA_FATIMA_process.png`;
+    let gdalOutputPath = outputPath;
+    if (gdalOutputPath.startsWith('file://')) {
+      gdalOutputPath = gdalOutputPath.replace('file://', '');
+    }
+
+    console.log('=== processGeoPDF() called ===');
+    console.log('Input path:', gdalPath);
+    console.log('Output path:', gdalOutputPath);
+
+    try {
+      const result: ProcessGeoPDFResponse = await processGeoPDF(gdalPath, gdalOutputPath);
+
+      console.log('=== processGeoPDF Result ===');
+      console.log('Full response:', JSON.stringify(result, null, 2));
+      console.log('Status Code:', result.code);
+      console.log('Message:', result.msg);
+      console.log('Error:', result.error);
+      console.log('================================');
+
+      setProcessResult(result);
+
+      if (result.error) {
+        setRenderError(result.msg + (result.result?.errorDetails ? `: ${result.result.errorDetails}` : ''));
+        return;
+      }
+
+      if (result.result?.image?.path) {
+        const imageUri = result.result.image.path.startsWith('file://')
+          ? result.result.image.path
+          : `file://${result.result.image.path}`;
+        setImagePath(imageUri);
+      } 
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      console.error('=== Error processing GeoPDF ===');
+      console.error('Error:', err);
+      console.error('Error message:', errorMessage);
+      console.error('===================================');
+      setRenderError(errorMessage);
+    } finally {
+      setLoadingRender(false);
+    }
+  };
+
+  const displayedMetadata = processResult?.result?.metadata ?? renderMetadata?.result;
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -207,22 +270,37 @@ export default function ReadGeoPDFScreen({ navigation }: any) {
           </Text>
         </View>
 
-        <View style={styles.buttonContainer}>
-          <Button
-            title={loading ? "Reading..." : "Read GeoPDF"}
-            onPress={handleReadGeoPDF}
-            disabled={loading || loadingAsset || !filePath}
-          />
-        </View>
+       {Platform.OS === 'android' && (
+          <>
+            <View style={styles.buttonContainer}>
+              <Button
+                title={loading ? "Reading..." : "Read GeoPDF"}
+                onPress={handleReadGeoPDF}
+                disabled={loading || loadingAsset || !filePath}
+              />
+            </View>
 
-        <View style={styles.buttonContainer}>
-          <Button
-            title={loadingRender ? "Rendering..." : "Render & Show GeoPDF Image"}
-            onPress={handleRenderGeoPDF}
-            disabled={loadingRender || loadingAsset || !filePath}
-            color="#4CAF50"
-          />
-        </View>
+            <View style={styles.buttonContainer}>
+              <Button
+                title={loadingRender ? "Rendering..." : "Render & Show GeoPDF Image"}
+                onPress={handleRenderGeoPDF}
+                disabled={loadingRender || loadingAsset || !filePath}
+                color="#4CAF50"
+              />
+            </View>
+          </>
+        )}
+        
+        {Platform.OS === 'ios' && (
+          <View style={styles.buttonContainer}>
+            <Button
+              title={loadingRender ? "Processing..." : "Process GeoPDF (new iOS function)"}
+              onPress={handleProcessGeoPDF}
+              disabled={loadingRender || loadingAsset || !filePath}
+              color="#9C27B0"
+            />
+          </View>
+        )}
 
         <View style={styles.buttonContainer}>
           <Button
@@ -276,60 +354,60 @@ export default function ReadGeoPDFScreen({ navigation }: any) {
               resizeMode="contain"
             />
             
-            {renderMetadata?.result && (
+            {displayedMetadata && (
               <View style={styles.metadataContainer}>
                 <Text style={styles.metadataTitle}>Image Coordinates:</Text>
                 
-                {renderMetadata.result.topLeft && (
+                {displayedMetadata.topLeft && (
                   <View style={styles.coordinateRow}>
                     <Text style={styles.coordinateLabel}>Top-Left:</Text>
                     <Text style={styles.coordinateValue}>
-                      ({renderMetadata.result.topLeft.x}, {renderMetadata.result.topLeft.y})
+                      ({displayedMetadata.topLeft.x}, {displayedMetadata.topLeft.y})
                     </Text>
                   </View>
                 )}
                 
-                {renderMetadata.result.topRight && (
+                {displayedMetadata.topRight && (
                   <View style={styles.coordinateRow}>
                     <Text style={styles.coordinateLabel}>Top-Right:</Text>
                     <Text style={styles.coordinateValue}>
-                      ({renderMetadata.result.topRight.x}, {renderMetadata.result.topRight.y})
+                      ({displayedMetadata.topRight.x}, {displayedMetadata.topRight.y})
                     </Text>
                   </View>
                 )}
                 
-                {renderMetadata.result.bottomLeft && (
+                {displayedMetadata.bottomLeft && (
                   <View style={styles.coordinateRow}>
                     <Text style={styles.coordinateLabel}>Bottom-Left:</Text>
                     <Text style={styles.coordinateValue}>
-                      ({renderMetadata.result.bottomLeft.x}, {renderMetadata.result.bottomLeft.y})
+                      ({displayedMetadata.bottomLeft.x}, {displayedMetadata.bottomLeft.y})
                     </Text>
                   </View>
                 )}
                 
-                {renderMetadata.result.bottomRight && (
+                {displayedMetadata.bottomRight && (
                   <View style={styles.coordinateRow}>
                     <Text style={styles.coordinateLabel}>Bottom-Right:</Text>
                     <Text style={styles.coordinateValue}>
-                      ({renderMetadata.result.bottomRight.x}, {renderMetadata.result.bottomRight.y})
+                      ({displayedMetadata.bottomRight.x}, {displayedMetadata.bottomRight.y})
                     </Text>
                   </View>
                 )}
                 
-                {renderMetadata.result.center && (
+                {displayedMetadata.center && (
                   <View style={styles.coordinateRow}>
                     <Text style={styles.coordinateLabel}>Center:</Text>
                     <Text style={styles.coordinateValue}>
-                      ({renderMetadata.result.center.x}, {renderMetadata.result.center.y})
+                      ({displayedMetadata.center.x}, {displayedMetadata.center.y})
                     </Text>
                   </View>
                 )}
                 
-                {renderMetadata.result.width && renderMetadata.result.height && (
+                {displayedMetadata.width && displayedMetadata.height && (
                   <View style={styles.coordinateRow}>
                     <Text style={styles.coordinateLabel}>Dimensions:</Text>
                     <Text style={styles.coordinateValue}>
-                      {renderMetadata.result.width} x {renderMetadata.result.height} pixels
+                      {displayedMetadata.width} x {displayedMetadata.height} pixels
                     </Text>
                   </View>
                 )}
