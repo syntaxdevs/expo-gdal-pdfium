@@ -114,6 +114,7 @@ export type GeoPoint = {
 };
 
 export type GeoPDFMetadata = {
+  geoTransform?: string[];
   topLeft?: GeoPoint;
   topRight?: GeoPoint;
   bottomLeft?: GeoPoint;

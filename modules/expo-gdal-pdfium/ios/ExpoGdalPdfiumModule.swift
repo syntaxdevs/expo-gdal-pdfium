@@ -188,6 +188,7 @@ public class ExpoGdalPdfiumModule: Module {
           let centerY = metadata?["centerY"] ?? 0.0
 
           let metadataPayload: [String: Any] = [
+            "geoTransform": [],
             "topLeft": [
               "x": String(topLeftY),
               "y": String(topLeftX)
@@ -297,6 +298,7 @@ public class ExpoGdalPdfiumModule: Module {
 
     var geoTransform = [Double](repeating: 0.0, count: 6)
     _ = GDALGetGeoTransform(dataset, &geoTransform)
+    let geoTransformStrings = geoTransform.map { String($0) }
 
     let topLeftX = geoTransform[0]
     let topLeftY = geoTransform[3]
@@ -348,6 +350,7 @@ public class ExpoGdalPdfiumModule: Module {
     }
 
     return [
+      "geoTransform": geoTransformStrings,
       "topLeft": [
         "x": String(finalTopLeftY),
         "y": String(finalTopLeftX)
