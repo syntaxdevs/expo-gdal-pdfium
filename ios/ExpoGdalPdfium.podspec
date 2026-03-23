@@ -6,8 +6,7 @@ Pod::Spec.new do |s|
   s.author         = ''
   s.homepage       = 'https://docs.expo.dev/modules/'
   s.platforms      = {
-    :ios => '15.1',
-    :tvos => '15.1'
+    :ios => '15.1'
   }
   s.source         = { git: '' }
 
@@ -15,13 +14,14 @@ Pod::Spec.new do |s|
 
   s.vendored_frameworks = 'GDAL.xcframework'
   s.libraries = 'iconv', 'sqlite3', 'c++'
-
+ 
   s.source_files = '*.{swift,h,m,mm}'
 
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
     'CLANG_CXX_LIBRARY' => 'libc++',
-    'OTHER_LDFLAGS' => '$(inherited) -liconv -lsqlite3'
+    'OTHER_LDFLAGS' => '$(inherited) -liconv -lsqlite3',
+    'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'x86_64'
   }
 end
