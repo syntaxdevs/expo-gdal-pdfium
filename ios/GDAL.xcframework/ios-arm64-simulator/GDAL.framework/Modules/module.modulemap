@@ -1,0 +1,5 @@
+framework module GDAL {
+    umbrella header "gdal.h"
+    export *
+    module * { export * }
+}
