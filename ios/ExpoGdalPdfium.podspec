@@ -5,16 +5,12 @@ Pod::Spec.new do |s|
   s.description    = 'Expo module for GDAL/PDFium GeoPDF processing'
   s.author         = ''
   s.homepage       = 'https://docs.expo.dev/modules/'
-  s.platforms      = {
-    :ios => '15.1'
-  }
+  s.platforms      = { :ios => '15.1' }
   s.source         = { git: '' }
 
   s.dependency 'ExpoModulesCore'
-
   s.vendored_frameworks = 'GDAL.xcframework'
   s.libraries = 'iconv', 'sqlite3', 'c++'
- 
   s.source_files = '*.{swift,h,m,mm}'
 
   s.pod_target_xcconfig = {
@@ -22,6 +18,10 @@ Pod::Spec.new do |s|
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
     'CLANG_CXX_LIBRARY' => 'libc++',
     'OTHER_LDFLAGS' => '$(inherited) -liconv -lsqlite3',
+    'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'x86_64'
+  }
+
+  s.user_target_xcconfig = {
     'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'x86_64'
   }
 end
