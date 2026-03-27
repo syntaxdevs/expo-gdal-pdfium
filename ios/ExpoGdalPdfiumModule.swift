@@ -90,6 +90,12 @@ public class ExpoGdalPdfiumModule: Module {
       let normalizedInputPath = inputPath.replacingOccurrences(of: "file://", with: "")
       let normalizedOutputPath = outputPath.replacingOccurrences(of: "file://", with: "")
 
+      logGeoPDF("processGeoPDF START")
+      logGeoPDF("inputPath raw: \(inputPath)")
+      logGeoPDF("outputPath raw: \(outputPath)")
+      logGeoPDF("inputPath normalized: \(normalizedInputPath)")
+      logGeoPDF("outputPath normalized: \(normalizedOutputPath)")
+
       let fileInfo = getFileInfo(path: normalizedInputPath)
       let fileExists = fileInfo["fileExists"] as? Bool ?? false
       let canRead = fileInfo["canRead"] as? Bool ?? false
@@ -97,7 +103,10 @@ public class ExpoGdalPdfiumModule: Module {
       let fileSizeString = fileInfo["fileSize"] as? String ?? "0"
       let fileSize = UInt64(fileSizeString) ?? 0
 
+      logGeoPDF("fileInfo: \(fileInfo)")
+
       if !fileExists || !isFile {
+        logGeoPDF("Returning FILE_NOT_FOUND")
         return createResponse(
           msg: "Failed to process GeoPDF",
           code: "FILE_NOT_FOUND",
@@ -109,6 +118,7 @@ public class ExpoGdalPdfiumModule: Module {
       }
 
       if fileSize == 0 {
+        logGeoPDF("Returning FILE_EMPTY")
         return createResponse(
           msg: "Failed to process GeoPDF",
           code: "FILE_EMPTY",
@@ -120,6 +130,7 @@ public class ExpoGdalPdfiumModule: Module {
       }
 
       if !canRead {
+        logGeoPDF("Returning FILE_PERMISSION_DENIED")
         return createResponse(
           msg: "Failed to process GeoPDF",
           code: "FILE_PERMISSION_DENIED",
@@ -134,13 +145,20 @@ public class ExpoGdalPdfiumModule: Module {
         let gdalError = CPLGetLastErrorMsg().map { String(cString: $0) } ?? "No error message available"
         let gdalErrorType = "\(CPLGetLastErrorType().rawValue)"
 
+        logGeoPDF("GDALOpen FAILED")
+        logGeoPDF("gdalError: \(gdalError)")
+        logGeoPDF("gdalErrorType: \(gdalErrorType)")
+
         let lowerError = gdalError.lowercased()
         let isGeodetic =
           lowerError.contains("geodetic") ||
           (lowerError.contains("unhandled") && lowerError.contains("projectiontype"))
 
+        logGeoPDF("isGeodetic: \(isGeodetic)")
+
         if isGeodetic {
           var metadata = extractMetadataFallback(path: normalizedInputPath)
+          logGeoPDF("extractMetadataFallback metadata: \(String(describing: metadata))")
 
           if metadata == nil,
             let ogrMetadata = GDALTransformHelper.extractGeospatialMetadata(withOGR: normalizedInputPath) as? [String: NSNumber] {
@@ -156,12 +174,18 @@ public class ExpoGdalPdfiumModule: Module {
               "centerX": ogrMetadata["centerX"]?.doubleValue ?? 0.0,
               "centerY": ogrMetadata["centerY"]?.doubleValue ?? 0.0
             ]
+            logGeoPDF("OGR fallback metadata: \(String(describing: metadata))")
           }
 
-          guard let _ = extractImageFallback(
+          let fallbackResult = extractImageFallback(
             inputPath: normalizedInputPath,
             outputPath: normalizedOutputPath
-          ) else {
+          )
+
+          logGeoPDF("extractImageFallback result: \(String(describing: fallbackResult))")
+
+          guard let _ = fallbackResult else {
+            logGeoPDF("Returning RENDER_ERROR from fallback")
             return createResponse(
               msg: "Failed to process GeoPDF",
               code: "RENDER_ERROR",
@@ -211,6 +235,8 @@ public class ExpoGdalPdfiumModule: Module {
             ]
           ]
 
+          logGeoPDF("Returning SUCCESS fallback metadataPayload: \(metadataPayload)")
+
           return createResponse(
             msg: "GeoPDF processed successfully (using fallback)",
             code: "SUCCESS",
@@ -224,6 +250,7 @@ public class ExpoGdalPdfiumModule: Module {
           )
         }
 
+        logGeoPDF("Returning GDAL_OPEN_FAILED")
         return createResponse(
           msg: "Failed to process GeoPDF",
           code: "GDAL_OPEN_FAILED",
@@ -240,18 +267,23 @@ public class ExpoGdalPdfiumModule: Module {
         GDALClose(dataset)
       }
 
+      logGeoPDF("GDALOpen SUCCESS")
+
       let metadata = extractMetadata(
         dataset: dataset
       )
+      logGeoPDF("extractMetadata returned: \(metadata)")
 
       let renderResult = extractImage(
         dataset: dataset,
         outputPath: normalizedOutputPath
       )
+      logGeoPDF("extractImage returned: \(renderResult)")
 
       let renderSuccess = renderResult["success"] as? Bool ?? false
 
       if !renderSuccess {
+        logGeoPDF("Returning RENDER_ERROR")
         return createResponse(
           msg: "Failed to process GeoPDF",
           code: "RENDER_ERROR",
@@ -260,16 +292,20 @@ public class ExpoGdalPdfiumModule: Module {
         )
       }
 
+      let finalResult: [String: Any] = [
+        "image": [
+          "path": renderResult["path"] as? String ?? normalizedOutputPath
+        ],
+        "metadata": metadata
+      ]
+
+      logGeoPDF("Returning SUCCESS finalResult: \(finalResult)")
+
       return createResponse(
         msg: "GeoPDF processed successfully",
         code: "SUCCESS",
         error: false,
-        result: [
-          "image": [
-            "path": renderResult["path"] as? String ?? normalizedOutputPath
-          ],
-          "metadata": metadata
-        ]
+        result: finalResult
       )
     }
 
@@ -297,8 +333,13 @@ public class ExpoGdalPdfiumModule: Module {
     let projection = projectionPtr != nil ? String(cString: projectionPtr!) : "Unknown"
 
     var geoTransform = [Double](repeating: 0.0, count: 6)
-    _ = GDALGetGeoTransform(dataset, &geoTransform)
+    let geoTransformResult = GDALGetGeoTransform(dataset, &geoTransform)
     let geoTransformStrings = geoTransform.map { String($0) }
+
+    logGeoPDF("extractMetadata width: \(width), height: \(height)")
+    logGeoPDF("extractMetadata projection: \(projection)")
+    logGeoPDF("extractMetadata geoTransformResult: \(geoTransformResult.rawValue)")
+    logGeoPDF("extractMetadata geoTransform: \(geoTransformStrings)")
 
     let topLeftX = geoTransform[0]
     let topLeftY = geoTransform[3]
@@ -316,6 +357,12 @@ public class ExpoGdalPdfiumModule: Module {
 
     let centerX = topLeftX + (Double(width) / 2.0) * pixelWidth
     let centerY = topLeftY + (Double(height) / 2.0) * pixelHeight
+
+    logGeoPDF("raw projected topLeft: (\(topLeftX), \(topLeftY))")
+    logGeoPDF("raw projected topRight: (\(topRightX), \(topRightY))")
+    logGeoPDF("raw projected bottomLeft: (\(bottomLeftX), \(bottomLeftY))")
+    logGeoPDF("raw projected bottomRight: (\(bottomRightX), \(bottomRightY))")
+    logGeoPDF("raw projected center: (\(centerX), \(centerY))")
 
     var finalTopLeftX = topLeftX
     var finalTopLeftY = topLeftY
@@ -349,7 +396,13 @@ public class ExpoGdalPdfiumModule: Module {
       finalCenterY = transformed.y
     }
 
-    return [
+    logGeoPDF("final WGS84 topLeft: (\(finalTopLeftX), \(finalTopLeftY))")
+    logGeoPDF("final WGS84 topRight: (\(finalTopRightX), \(finalTopRightY))")
+    logGeoPDF("final WGS84 bottomLeft: (\(finalBottomLeftX), \(finalBottomLeftY))")
+    logGeoPDF("final WGS84 bottomRight: (\(finalBottomRightX), \(finalBottomRightY))")
+    logGeoPDF("final WGS84 center: (\(finalCenterX), \(finalCenterY))")
+
+    let result: [String: Any] = [
       "geoTransform": geoTransformStrings,
       "topLeft": [
         "x": String(finalTopLeftY),
@@ -372,6 +425,10 @@ public class ExpoGdalPdfiumModule: Module {
         "y": String(finalCenterX)
       ]
     ]
+
+    logGeoPDF("extractMetadata result payload: \(result)")
+
+    return result
   }
 
   // Converts the GeoPDF dataset into a PNG image using GDAL.
@@ -617,6 +674,10 @@ public class ExpoGdalPdfiumModule: Module {
       "error": error,
       "result": result
     ]
+  }
+
+  private func logGeoPDF(_ message: String) {
+    print("[GeoPDF iOS] \(message)")
   }
 
   // Helper function that returns file existence, permissions, type, and size information for debugging and validation
