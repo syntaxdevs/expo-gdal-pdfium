@@ -34,7 +34,8 @@
     
     // Initialize the source SRS from the provided WKT and the target SRS as WGS84
     OGRErr sourceErr = OSRSetFromUserInput(sourceSRS, projCString);
-    OGRErr targetErr = OSRSetFromUserInput(targetSRS, "EPSG:4326");
+    const char *wgs84Wkt = "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433]]";
+    OGRErr targetErr = OSRImportFromWkt(targetSRS, (char **)&wgs84Wkt);
 
     if (sourceErr != OGRERR_NONE || targetErr != OGRERR_NONE) {
         OSRDestroySpatialReference(sourceSRS);

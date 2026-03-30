@@ -190,24 +190,24 @@ public class ExpoGdalPdfiumModule: Module {
           let metadataPayload: [String: Any] = [
             "geoTransform": [],
             "topLeft": [
-              "x": String(topLeftY),
-              "y": String(topLeftX)
+              "x": String(topLeftX),
+              "y": String(topLeftY)
             ],
             "topRight": [
-              "x": String(topRightY),
-              "y": String(topRightX)
+              "x": String(topRightX),
+              "y": String(topRightY)
             ],
             "bottomLeft": [
-              "x": String(bottomLeftY),
-              "y": String(bottomLeftX)
+              "x": String(bottomLeftX),
+              "y": String(bottomLeftY)
             ],
             "bottomRight": [
-              "x": String(bottomRightY),
-              "y": String(bottomRightX)
+              "x": String(bottomRightX),
+              "y": String(bottomRightY)
             ],
             "center": [
-              "x": String(centerY),
-              "y": String(centerX)
+              "x": String(centerX),
+              "y": String(centerY)
             ]
           ]
 
@@ -352,24 +352,24 @@ public class ExpoGdalPdfiumModule: Module {
     return [
       "geoTransform": geoTransformStrings,
       "topLeft": [
-        "x": String(finalTopLeftY),
-        "y": String(finalTopLeftX)
+        "x": String(finalTopLeftX),
+        "y": String(finalTopLeftY)
       ],
       "topRight": [
-        "x": String(finalTopRightY),
-        "y": String(finalTopRightX)
+        "x": String(finalTopRightX),
+        "y": String(finalTopRightY)
       ],
       "bottomLeft": [
-        "x": String(finalBottomLeftY),
-        "y": String(finalBottomLeftX)
+        "x": String(finalBottomLeftX),
+        "y": String(finalBottomLeftY)
       ],
       "bottomRight": [
-        "x": String(finalBottomRightY),
-        "y": String(finalBottomRightX)
+        "x": String(finalBottomRightX),
+        "y": String(finalBottomRightY)
       ],
       "center": [
-        "x": String(finalCenterY),
-        "y": String(finalCenterX)
+        "x": String(finalCenterX),
+        "y": String(finalCenterY)
       ]
     ]
   }

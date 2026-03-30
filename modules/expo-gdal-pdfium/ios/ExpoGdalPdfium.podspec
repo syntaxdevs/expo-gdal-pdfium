@@ -5,10 +5,7 @@ Pod::Spec.new do |s|
   s.description    = 'Expo module for GDAL/PDFium GeoPDF processing'
   s.author         = ''
   s.homepage       = 'https://docs.expo.dev/modules/'
-  s.platforms      = {
-    :ios => '15.1',
-    :tvos => '15.1'
-  }
+  s.platforms      = {:ios => '15.1'}
   s.source         = { git: '' }
 
   s.dependency 'ExpoModulesCore'
