@@ -1,6 +1,6 @@
 import { NativeModule, requireNativeModule } from 'expo';
 
-import { ExpoGdalPdfiumModuleEvents, VersionInfoResponse, DriversListResponse, ReadGeoPDFResponse, RenderGeoPDFResponse, ExtractRawMetadataResponse } from './ExpoGdalPdfium.types';
+import { ExpoGdalPdfiumModuleEvents, VersionInfoResponse, DriversListResponse, ReadGeoPDFResponse, RenderGeoPDFResponse, ExtractRawMetadataResponse, ProcessGeoPDFResponse } from './ExpoGdalPdfium.types';
 
 declare class ExpoGdalPdfiumModule extends NativeModule<ExpoGdalPdfiumModuleEvents> {
   PI: number;
@@ -11,6 +11,7 @@ declare class ExpoGdalPdfiumModule extends NativeModule<ExpoGdalPdfiumModuleEven
   readGeoPDF(filePath: string): Promise<ReadGeoPDFResponse>;
   renderGeoPDFToPng(inputPath: string, outputPath: string): Promise<RenderGeoPDFResponse>;
   extractRawMetadata(filePath: string): Promise<ExtractRawMetadataResponse>;
+  processGeoPDF(inputPath: string, outputPath: string): Promise<ProcessGeoPDFResponse>;
 }
 
 // This call loads the native module object from the JSI.

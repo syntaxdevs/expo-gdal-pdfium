@@ -1,23 +1,27 @@
 Pod::Spec.new do |s|
   s.name           = 'ExpoGdalPdfium'
   s.version        = '1.0.0'
-  s.summary        = 'A sample project summary'
-  s.description    = 'A sample project description'
+  s.summary        = 'GDAL/PDFium module for Expo'
+  s.description    = 'Expo module for GDAL/PDFium GeoPDF processing'
   s.author         = ''
   s.homepage       = 'https://docs.expo.dev/modules/'
-  s.platforms      = {
-    :ios => '15.1',
-    :tvos => '15.1'
-  }
+  s.platforms      = { :ios => '15.1' }
   s.source         = { git: '' }
-  s.static_framework = true
 
   s.dependency 'ExpoModulesCore'
+  s.vendored_frameworks = 'GDAL.xcframework'
+  s.libraries = 'iconv', 'sqlite3', 'c++'
+  s.source_files = '*.{swift,h,m,mm}'
 
-  # Swift/Objective-C compatibility
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
+    'CLANG_CXX_LIBRARY' => 'libc++',
+    'OTHER_LDFLAGS' => '$(inherited) -liconv -lsqlite3',
+    'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'x86_64'
   }
 
-  s.source_files = "**/*.{h,m,mm,swift,hpp,cpp}"
+  s.user_target_xcconfig = {
+    'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'x86_64'
+  }
 end
