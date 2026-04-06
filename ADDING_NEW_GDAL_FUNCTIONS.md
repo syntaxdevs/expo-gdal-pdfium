@@ -5,7 +5,9 @@ This guide explains how to add new GDAL functions to your Expo module, following
 ## Overview
 
 When adding a new GDAL function, you need to update **4 files**:
-1. **Kotlin Module** (`android/src/main/java/expo/modules/gdalpdfium/ExpoGdalPdfiumModule.kt`)
+1. **Native Module (Android and/or iOS)**  
+   - Android: `android/src/main/java/expo/modules/gdalpdfium/ExpoGdalPdfiumModule.kt`  
+   - iOS: `ios/ExpoGdalPdfiumModule.swift`
 2. **TypeScript Types** (`src/ExpoGdalPdfium.types.ts`)
 3. **TypeScript Module Interface** (`src/ExpoGdalPdfiumModule.ts`)
 4. **Index Exports** (`index.ts`)
@@ -30,9 +32,10 @@ When adding a new GDAL function, you need to update **4 files**:
 
 ---
 
-## Step 2: Add Function to Kotlin Module
+## Step 2: Add Function to Native Modules
 
-**File:** `modules/expo-gdal-pdfium/android/src/main/java/expo/modules/gdalpdfium/ExpoGdalPdfiumModule.kt`
+**Android:** `android/src/main/java/expo/modules/gdalpdfium/ExpoGdalPdfiumModule.kt`
+**iOS:** `ios/ExpoGdalPdfiumModule.swift`
 
 ### 2.1 Add Import (if needed)
 ```kotlin
@@ -191,7 +194,7 @@ AsyncFunction("yourFunctionName") {
 
 ## Step 3: Add TypeScript Type
 
-**File:** `modules/expo-gdal-pdfium/src/ExpoGdalPdfium.types.ts`
+**File:** `src/ExpoGdalPdfium.types.ts`
 
 ### 3.1 Create Response Type
 Add a new type for your function's response:
@@ -237,7 +240,7 @@ export type YourFunctionResponse = {
 
 ## Step 4: Update TypeScript Module Interface
 
-**File:** `modules/expo-gdal-pdfium/src/ExpoGdalPdfiumModule.ts`
+**File:** `src/ExpoGdalPdfiumModule.ts`
 
 ### 4.1 Import the New Type
 ```typescript
@@ -265,7 +268,7 @@ declare class ExpoGdalPdfiumModule extends NativeModule<ExpoGdalPdfiumModuleEven
 
 ## Step 5: Export Wrapper Function
 
-**File:** `modules/expo-gdal-pdfium/index.ts`
+**File:** `index.ts`
 
 ### 5.1 Import the Type
 ```typescript
@@ -290,7 +293,7 @@ export async function openDataset(filePath: string): Promise<OpenDatasetResponse
 
 ### 6.1 In Your App (App.tsx)
 ```typescript
-import { openDataset } from './modules/expo-gdal-pdfium';
+import { openDataset } from 'expo-gdal-pdfium';
 
 const handleOpenDataset = async () => {
   try {
@@ -315,7 +318,7 @@ console.log('Message:', result.msg);
 
 ## Complete Example: Adding `getDriverInfo` Function
 
-### Step 1: Kotlin Module
+### Step 1: Native Module
 ```kotlin
 // Add import if needed (Driver is already imported)
 // import org.gdal.gdal.Driver
@@ -472,9 +475,10 @@ if (result == null) {
 ## Quick Reference: File Locations
 
 ```
-modules/expo-gdal-pdfium/
 ├── android/src/main/java/expo/modules/gdalpdfium/
-│   └── ExpoGdalPdfiumModule.kt          ← Step 2: Add AsyncFunction
+│   └── ExpoGdalPdfiumModule.kt          ← Step 2: Add AsyncFunction (android)
+├── ios/
+│   └── ExpoGdalPdfiumModule.swift       ← Step 2: Add AsyncFunction (ios)
 ├── src/
 │   ├── ExpoGdalPdfium.types.ts          ← Step 3: Add response type
 │   └── ExpoGdalPdfiumModule.ts          ← Step 4: Add to interface

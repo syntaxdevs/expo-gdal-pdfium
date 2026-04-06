@@ -27,13 +27,31 @@ npm install expo-gdal-pdfium
 # or
 yarn add expo-gdal-pdfium
 ```
+## Example App
 
+This repository includes an example Expo app for testing the module locally.
+
+### Run the example app
+
+```bash
+cd example
+npm install
+```
+
+Then run on a device or simulator:
+
+```bash
+npx expo run:ios
+# or
+npx expo run:android
+```
 ## Prerequisites
 
-This module requires the GDAL native library (`.aar` file for Android). The library file should be placed at:
+This module requires the GDAL native libraries for both platforms:
 - Android: `android/libs/gdal-release.aar`
+- iOS: `ios/GDAL.xcframework`  
 
-Make sure your project has the GDAL `.aar` file in the correct location.
+Make sure both native libraries are present in the correct locations.
 
 ## Usage
 
