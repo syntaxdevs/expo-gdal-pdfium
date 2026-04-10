@@ -1,5 +1,5 @@
 {
-  "name": "expo-gdal-pdfium",
+  "name": "expo-gdal",
   "version": "0.7.6",
   "description": "Expo module for GDAL/PDFium GeoPDF processing with coordinate transformation to WGS84",
   "main": "index.ts",

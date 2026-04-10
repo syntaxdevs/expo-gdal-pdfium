@@ -1,4 +1,4 @@
-# expo-gdal-pdfium
+# expo-gdal
 
 Expo module for processing GeoPDF files using GDAL with coordinate transformation to WGS84.
 
@@ -15,25 +15,43 @@ Expo module for processing GeoPDF files using GDAL with coordinate transformatio
 ### From GitHub
 
 ```bash
-npm install https://github.com/syntaxdevs/expo-gdal-pdfium.git
+npm install https://github.com/syntaxdevs/expo-gdal.git
 # or
-yarn add https://github.com/syntaxdevs/expo-gdal-pdfium.git
+yarn add https://github.com/syntaxdevs/expo-gdal.git
 ```
 
 ### From npm (if published)
 
 ```bash
-npm install expo-gdal-pdfium
+npm install expo-gdal
 # or
-yarn add expo-gdal-pdfium
+yarn add expo-gdal
+```
+## Example App
+
+This repository includes an example Expo app for testing the module locally.
+
+### Run the example app
+
+```bash
+cd example
+npm install
 ```
 
+Then run on a device or simulator:
+
+```bash
+npx expo run:ios
+# or
+npx expo run:android
+```
 ## Prerequisites
 
-This module requires the GDAL native library (`.aar` file for Android). The library file should be placed at:
+This module requires the GDAL native libraries for both platforms:
 - Android: `android/libs/gdal-release.aar`
+- iOS: `ios/GDAL.xcframework`  
 
-Make sure your project has the GDAL `.aar` file in the correct location.
+Make sure both native libraries are present in the correct locations.
 
 ## Usage
 
@@ -43,7 +61,7 @@ import {
   listDrivers, 
   readGeoPDF, 
   renderGeoPDFToPng 
-} from 'expo-gdal-pdfium';
+} from 'expo-gdal';
 
 // Get GDAL version information
 const versionInfo = await getVersionInfo();
@@ -118,5 +136,5 @@ MIT
 
 ## Repository
 
-https://github.com/syntaxdevs/expo-gdal-pdfium
+https://github.com/syntaxdevs/expo-gdal
 

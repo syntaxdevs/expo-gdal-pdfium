@@ -1,6 +1,6 @@
 apply plugin: 'com.android.library'
 
-group = 'expo.modules.gdalpdfium'
+group = 'expo.modules.gdal'
 version = '0.7.6'
 
 def expoModulesCorePlugin = new File(project(":expo-modules-core").projectDir.absolutePath, "ExpoModulesCorePlugin.gradle")
@@ -32,7 +32,7 @@ if (useManagedAndroidSdkVersions) {
 }
 
 android {
-  namespace "expo.modules.gdalpdfium"
+  namespace "expo.modules.gdal"
   defaultConfig {
     versionCode 1
     versionName "0.7.6"
