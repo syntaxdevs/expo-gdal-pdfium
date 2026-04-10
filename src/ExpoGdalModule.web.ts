@@ -1,12 +1,12 @@
 import { registerWebModule, NativeModule } from 'expo';
 
-import { ChangeEventPayload } from './ExpoGdalPdfium.types';
+import { ChangeEventPayload } from './ExpoGdal.types';
 
-type ExpoGdalPdfiumModuleEvents = {
+type ExpoGdalModuleEvents = {
   onChange: (params: ChangeEventPayload) => void;
 }
 
-class ExpoGdalPdfiumModule extends NativeModule<ExpoGdalPdfiumModuleEvents> {
+class ExpoGdalModule extends NativeModule<ExpoGdalModuleEvents> {
   PI = Math.PI;
   async setValueAsync(value: string): Promise<void> {
     this.emit('onChange', { value });
@@ -16,4 +16,4 @@ class ExpoGdalPdfiumModule extends NativeModule<ExpoGdalPdfiumModuleEvents> {
   }
 };
 
-export default registerWebModule(ExpoGdalPdfiumModule, 'ExpoGdalPdfiumModule');
+export default registerWebModule(ExpoGdalModule, 'ExpoGdalModule');

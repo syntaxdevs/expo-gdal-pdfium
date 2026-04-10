@@ -1,8 +1,8 @@
 import * as React from 'react';
 
-import { ExpoGdalPdfiumViewProps } from './ExpoGdalPdfium.types';
+import { ExpoGdalViewProps } from './ExpoGdal.types';
 
-export default function ExpoGdalPdfiumView(props: ExpoGdalPdfiumViewProps) {
+export default function ExpoGdalView(props: ExpoGdalViewProps) {
   return (
     <div>
       <iframe

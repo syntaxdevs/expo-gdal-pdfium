@@ -17,7 +17,7 @@ config.resolver.nodeModulesPaths = [
 
 // Make the package name point to the module in the repo root
 config.resolver.extraNodeModules = {
-  'expo-gdal-pdfium': repoRoot,
+  'expo-gdal': repoRoot,
 };
 
 module.exports = config;

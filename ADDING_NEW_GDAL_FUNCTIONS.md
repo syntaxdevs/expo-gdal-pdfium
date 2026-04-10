@@ -6,10 +6,10 @@ This guide explains how to add new GDAL functions to your Expo module, following
 
 When adding a new GDAL function, you need to update **4 files**:
 1. **Native Module (Android and/or iOS)**  
-   - Android: `android/src/main/java/expo/modules/gdalpdfium/ExpoGdalPdfiumModule.kt`  
-   - iOS: `ios/ExpoGdalPdfiumModule.swift`
-2. **TypeScript Types** (`src/ExpoGdalPdfium.types.ts`)
-3. **TypeScript Module Interface** (`src/ExpoGdalPdfiumModule.ts`)
+   - Android: `android/src/main/java/expo/modules/gdal/ExpoGdalModule.kt`  
+   - iOS: `ios/ExpoGdalModule.swift`
+2. **TypeScript Types** (`src/ExpoGdal.types.ts`)
+3. **TypeScript Module Interface** (`src/ExpoGdalModule.ts`)
 4. **Index Exports** (`index.ts`)
 
 ---
@@ -34,8 +34,8 @@ When adding a new GDAL function, you need to update **4 files**:
 
 ## Step 2: Add Function to Native Modules
 
-**Android:** `android/src/main/java/expo/modules/gdalpdfium/ExpoGdalPdfiumModule.kt`
-**iOS:** `ios/ExpoGdalPdfiumModule.swift`
+**Android:** `android/src/main/java/expo/modules/gdal/ExpoGdalModule.kt`
+**iOS:** `ios/ExpoGdalModule.swift`
 
 ### 2.1 Add Import (if needed)
 ```kotlin
@@ -53,7 +53,7 @@ AsyncFunction("openDataset") {
     promise: Promise 
     ->
     try {
-        Log.i("ExpoGdalPdfium", "Opening dataset: $filePath")
+        Log.i("ExpoGdal", "Opening dataset: $filePath")
         
         // Call GDAL function
         val dataset = gdal.Open(filePath)
@@ -88,7 +88,7 @@ AsyncFunction("openDataset") {
             )
         )
     } catch (e: ClassNotFoundException) {
-        Log.e("ExpoGdalPdfium", "GDAL classes not found", e)
+        Log.e("ExpoGdal", "GDAL classes not found", e)
         promise.resolve(
             createResponseMap(
                 "GDAL classes not found",
@@ -98,7 +98,7 @@ AsyncFunction("openDataset") {
             )
         )
     } catch (e: UnsatisfiedLinkError) {
-        Log.e("ExpoGdalPdfium", "GDAL native library not loaded", e)
+        Log.e("ExpoGdal", "GDAL native library not loaded", e)
         promise.resolve(
             createResponseMap(
                 "GDAL native library not loaded",
@@ -108,7 +108,7 @@ AsyncFunction("openDataset") {
             )
         )
     } catch (e: Exception) {
-        Log.e("ExpoGdalPdfium", "Error opening dataset", e)
+        Log.e("ExpoGdal", "Error opening dataset", e)
         promise.resolve(
             createResponseMap(
                 "Error opening dataset: ${e.message}",
@@ -133,7 +133,7 @@ AsyncFunction("yourFunctionName") {
     promise: Promise 
     ->
     try {
-        Log.i("ExpoGdalPdfium", "Your function description")
+        Log.i("ExpoGdal", "Your function description")
         
         // 1. Call GDAL function(s)
         val result = gdal.YourGDALMethod(param1, param2)
@@ -194,7 +194,7 @@ AsyncFunction("yourFunctionName") {
 
 ## Step 3: Add TypeScript Type
 
-**File:** `src/ExpoGdalPdfium.types.ts`
+**File:** `src/ExpoGdal.types.ts`
 
 ### 3.1 Create Response Type
 Add a new type for your function's response:
@@ -240,21 +240,21 @@ export type YourFunctionResponse = {
 
 ## Step 4: Update TypeScript Module Interface
 
-**File:** `src/ExpoGdalPdfiumModule.ts`
+**File:** `src/ExpoGdalModule.ts`
 
 ### 4.1 Import the New Type
 ```typescript
 import { 
-  ExpoGdalPdfiumModuleEvents, 
+  ExpoGdalModuleEvents, 
   VersionInfoResponse, 
   DriversListResponse,
   OpenDatasetResponse  // Add your new type
-} from './ExpoGdalPdfium.types';
+} from './ExpoGdal.types';
 ```
 
 ### 4.2 Add Method to Interface
 ```typescript
-declare class ExpoGdalPdfiumModule extends NativeModule<ExpoGdalPdfiumModuleEvents> {
+declare class ExpoGdalModule extends NativeModule<ExpoGdalModuleEvents> {
   PI: number;
   hello(): string;
   setValueAsync(value: string): Promise<void>;
@@ -276,14 +276,14 @@ import {
   VersionInfoResponse, 
   DriversListResponse,
   OpenDatasetResponse  // Add your new type
-} from './src/ExpoGdalPdfium.types';
+} from './src/ExpoGdal.types';
 ```
 
 ### 5.2 Add Wrapper Function
 ```typescript
 // Convenient wrapper function for opening a dataset
 export async function openDataset(filePath: string): Promise<OpenDatasetResponse> {
-  return await ExpoGdalPdfiumModule.openDataset(filePath);
+  return await ExpoGdalModule.openDataset(filePath);
 }
 ```
 
@@ -293,7 +293,7 @@ export async function openDataset(filePath: string): Promise<OpenDatasetResponse
 
 ### 6.1 In Your App (App.tsx)
 ```typescript
-import { openDataset } from 'expo-gdal-pdfium';
+import { openDataset } from 'expo-gdal';
 
 const handleOpenDataset = async () => {
   try {
@@ -328,7 +328,7 @@ AsyncFunction("getDriverInfo") {
     promise: Promise 
     ->
     try {
-        Log.i("ExpoGdalPdfium", "Getting driver info: $driverName")
+        Log.i("ExpoGdal", "Getting driver info: $driverName")
         
         val driver = gdal.GetDriverByName(driverName)
         
@@ -356,7 +356,7 @@ AsyncFunction("getDriverInfo") {
             )
         )
     } catch (e: Exception) {
-        Log.e("ExpoGdalPdfium", "Error getting driver info", e)
+        Log.e("ExpoGdal", "Error getting driver info", e)
         promise.resolve(
             createResponseMap(
                 "Error: ${e.message}",
@@ -386,9 +386,9 @@ export type DriverInfoResponse = {
 
 ### Step 3: Module Interface
 ```typescript
-import { DriverInfoResponse } from './ExpoGdalPdfium.types';
+import { DriverInfoResponse } from './ExpoGdal.types';
 
-declare class ExpoGdalPdfiumModule extends NativeModule<ExpoGdalPdfiumModuleEvents> {
+declare class ExpoGdalModule extends NativeModule<ExpoGdalModuleEvents> {
   // ... existing methods
   getDriverInfo(driverName: string): Promise<DriverInfoResponse>;
 }
@@ -396,10 +396,10 @@ declare class ExpoGdalPdfiumModule extends NativeModule<ExpoGdalPdfiumModuleEven
 
 ### Step 4: Export
 ```typescript
-import { DriverInfoResponse } from './src/ExpoGdalPdfium.types';
+import { DriverInfoResponse } from './src/ExpoGdal.types';
 
 export async function getDriverInfo(driverName: string): Promise<DriverInfoResponse> {
-  return await ExpoGdalPdfiumModule.getDriverInfo(driverName);
+  return await ExpoGdalModule.getDriverInfo(driverName);
 }
 ```
 
@@ -411,8 +411,8 @@ export async function getDriverInfo(driverName: string): Promise<DriverInfoRespo
 - [ ] **Kotlin**: Added AsyncFunction with proper error handling
 - [ ] **Kotlin**: Used `createResponseMap()` helper
 - [ ] **Kotlin**: Added logging with `Log.i()` or `Log.e()`
-- [ ] **Types**: Created response type in `ExpoGdalPdfium.types.ts`
-- [ ] **Module**: Added method to interface in `ExpoGdalPdfiumModule.ts`
+- [ ] **Types**: Created response type in `ExpoGdal.types.ts`
+- [ ] **Module**: Added method to interface in `ExpoGdalModule.ts`
 - [ ] **Module**: Imported new type
 - [ ] **Index**: Added wrapper function in `index.ts`
 - [ ] **Index**: Imported new type
@@ -475,13 +475,13 @@ if (result == null) {
 ## Quick Reference: File Locations
 
 ```
-├── android/src/main/java/expo/modules/gdalpdfium/
-│   └── ExpoGdalPdfiumModule.kt          ← Step 2: Add AsyncFunction (android)
+├── android/src/main/java/expo/modules/gdal/
+│   └── ExpoGdalModule.kt          ← Step 2: Add AsyncFunction (android)
 ├── ios/
-│   └── ExpoGdalPdfiumModule.swift       ← Step 2: Add AsyncFunction (ios)
+│   └── ExpoGdalModule.swift       ← Step 2: Add AsyncFunction (ios)
 ├── src/
-│   ├── ExpoGdalPdfium.types.ts          ← Step 3: Add response type
-│   └── ExpoGdalPdfiumModule.ts          ← Step 4: Add to interface
+│   ├── ExpoGdal.types.ts          ← Step 3: Add response type
+│   └── ExpoGdalModule.ts          ← Step 4: Add to interface
 └── index.ts                              ← Step 5: Add wrapper function
 ```
 

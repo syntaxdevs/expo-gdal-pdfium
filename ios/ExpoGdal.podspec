@@ -1,5 +1,5 @@
 Pod::Spec.new do |s|
-  s.name           = 'ExpoGdalPdfium'
+  s.name           = 'ExpoGdal'
   s.version        = '1.0.0'
   s.summary        = 'GDAL/PDFium module for Expo'
   s.description    = 'Expo module for GDAL/PDFium GeoPDF processing'

@@ -3,9 +3,9 @@ import GDAL
 import PDFKit
 import UniformTypeIdentifiers
 
-public class ExpoGdalPdfiumModule: Module {
+public class ExpoGdalModule: Module {
   public func definition() -> ModuleDefinition {
-    Name("ExpoGdalPdfium")
+    Name("ExpoGdal")
 
     Constant("PI") {
       Double.pi
@@ -273,8 +273,8 @@ public class ExpoGdalPdfiumModule: Module {
       )
     }
 
-    View(ExpoGdalPdfiumView.self) {
-      Prop("url") { (view: ExpoGdalPdfiumView, url: URL) in
+    View(ExpoGdalView.self) {
+      Prop("url") { (view: ExpoGdalView, url: URL) in
         if view.webView.url != url {
           view.webView.load(URLRequest(url: url))
         }

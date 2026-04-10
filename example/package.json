@@ -1,5 +1,5 @@
 {
-  "name": "expo-gdal-pdfium-example",
+  "name": "expo-gdal-example",
   "version": "1.0.0",
   "private": true,
   "main": "index.ts",

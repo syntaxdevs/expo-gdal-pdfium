@@ -4,7 +4,7 @@ export type OnLoadEventPayload = {
   url: string;
 };
 
-export type ExpoGdalPdfiumModuleEvents = {
+export type ExpoGdalModuleEvents = {
   onChange: (params: ChangeEventPayload) => void;
 };
 
@@ -134,7 +134,7 @@ export type ExtractRawMetadataResponse = {
   } | null;
 };
 
-export type ExpoGdalPdfiumViewProps = {
+export type ExpoGdalViewProps = {
   url: string;
   onLoad: (event: { nativeEvent: OnLoadEventPayload }) => void;
   style?: StyleProp<ViewStyle>;

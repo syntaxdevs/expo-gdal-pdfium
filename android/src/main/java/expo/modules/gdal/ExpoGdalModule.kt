@@ -1,4 +1,4 @@
-package expo.modules.gdalpdfium
+package expo.modules.gdal
 
 import android.util.Log
 import android.graphics.Bitmap
@@ -34,7 +34,7 @@ import android.os.ParcelFileDescriptor
 import android.graphics.Canvas
 import android.graphics.Paint
 
-class ExpoGdalPdfiumModule : Module() {
+class ExpoGdalModule : Module() {
   companion object {
     init {
       // Load GDAL native library if required
@@ -46,7 +46,7 @@ class ExpoGdalPdfiumModule : Module() {
         try {
           System.loadLibrary("gdal")
         } catch (e2: UnsatisfiedLinkError) {
-          Log.w("ExpoGdalPdfium", "Could not load GDAL native library. Some functions may not work.")
+          Log.w("ExpoGdal", "Could not load GDAL native library. Some functions may not work.")
         }
       }
     }
@@ -58,8 +58,8 @@ class ExpoGdalPdfiumModule : Module() {
   override fun definition() = ModuleDefinition {
     // Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
     // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
-    // The module will be accessible from `requireNativeModule('ExpoGdalPdfium')` in JavaScript.
-    Name("ExpoGdalPdfium")
+    // The module will be accessible from `requireNativeModule('ExpoGdal')` in JavaScript.
+    Name("ExpoGdal")
 
     // Defines constant property on the module.
     Constant("PI") {
@@ -88,7 +88,7 @@ class ExpoGdalPdfiumModule : Module() {
     // Based on GDAL API: https://gdal.org/en/stable/doxygen/functions_func_g.html
     AsyncFunction("getVersionInfo") { promise: Promise ->
       try {
-        Log.i("ExpoGdalPdfium", "Getting GDAL version info")
+        Log.i("ExpoGdal", "Getting GDAL version info")
         
         // GDAL VersionInfo() - returns version information (Java bindings use VersionInfo, not GetVersionInfo)
         // Common request values: "--version", "VERSION_NUM", "RELEASE_DATE"
@@ -110,7 +110,7 @@ class ExpoGdalPdfiumModule : Module() {
           )
         )
       } catch (e: ClassNotFoundException) {
-        Log.e("ExpoGdalPdfium", "GDAL classes not found. Check if .aar is properly linked.", e)
+        Log.e("ExpoGdal", "GDAL classes not found. Check if .aar is properly linked.", e)
         promise.resolve(
           createResponseMap(
             "GDAL classes not found. Please verify the .aar package structure.",
@@ -120,7 +120,7 @@ class ExpoGdalPdfiumModule : Module() {
           )
         )
       } catch (e: UnsatisfiedLinkError) {
-        Log.e("ExpoGdalPdfium", "GDAL native library not loaded.", e)
+        Log.e("ExpoGdal", "GDAL native library not loaded.", e)
         promise.resolve(
           createResponseMap(
             "GDAL native library not loaded. Check native library configuration.",
@@ -130,7 +130,7 @@ class ExpoGdalPdfiumModule : Module() {
           )
         )
       } catch (e: Exception) {
-        Log.e("ExpoGdalPdfium", "Error getting GDAL version info", e)
+        Log.e("ExpoGdal", "Error getting GDAL version info", e)
         promise.resolve(
           createResponseMap(
             "Error getting version info: ${e.message}",
@@ -146,7 +146,7 @@ class ExpoGdalPdfiumModule : Module() {
     // Returns a list of all available GDAL drivers
     AsyncFunction("listDrivers") { promise: Promise ->
       try {
-        Log.i("ExpoGdalPdfium", "Listing GDAL drivers")
+        Log.i("ExpoGdal", "Listing GDAL drivers")
         
         // Register all drivers first
         gdal.AllRegister()
@@ -181,7 +181,7 @@ class ExpoGdalPdfiumModule : Module() {
           )
         )
       } catch (e: ClassNotFoundException) {
-        Log.e("ExpoGdalPdfium", "GDAL classes not found. Check if .aar is properly linked.", e)
+        Log.e("ExpoGdal", "GDAL classes not found. Check if .aar is properly linked.", e)
         promise.resolve(
           createResponseMap(
             "GDAL classes not found. Please verify the .aar package structure.",
@@ -191,7 +191,7 @@ class ExpoGdalPdfiumModule : Module() {
           )
         )
       } catch (e: UnsatisfiedLinkError) {
-        Log.e("ExpoGdalPdfium", "GDAL native library not loaded.", e)
+        Log.e("ExpoGdal", "GDAL native library not loaded.", e)
         promise.resolve(
           createResponseMap(
             "GDAL native library not loaded. Check native library configuration.",
@@ -201,7 +201,7 @@ class ExpoGdalPdfiumModule : Module() {
           )
         )
       } catch (e: Exception) {
-        Log.e("ExpoGdalPdfium", "Error listing GDAL drivers", e)
+        Log.e("ExpoGdal", "Error listing GDAL drivers", e)
         promise.resolve(
           createResponseMap(
             "Error listing drivers: ${e.message}",
@@ -217,7 +217,7 @@ class ExpoGdalPdfiumModule : Module() {
     // Reads a GeoPDF file and returns its information
     AsyncFunction("readGeoPDF") { filePath: String, promise: Promise ->
       try {
-        Log.i("ExpoGdalPdfium", "Reading GeoPDF: $filePath")
+        Log.i("ExpoGdal", "Reading GeoPDF: $filePath")
         
         // Register all drivers first
         gdal.AllRegister()
@@ -291,7 +291,7 @@ class ExpoGdalPdfiumModule : Module() {
           dataset.delete()
         }
       } catch (e: ClassNotFoundException) {
-        Log.e("ExpoGdalPdfium", "GDAL classes not found", e)
+        Log.e("ExpoGdal", "GDAL classes not found", e)
         promise.resolve(
           createResponseMap(
             "GDAL classes not found",
@@ -301,7 +301,7 @@ class ExpoGdalPdfiumModule : Module() {
           )
         )
       } catch (e: UnsatisfiedLinkError) {
-        Log.e("ExpoGdalPdfium", "GDAL native library not loaded", e)
+        Log.e("ExpoGdal", "GDAL native library not loaded", e)
         promise.resolve(
           createResponseMap(
             "GDAL native library not loaded",
@@ -311,7 +311,7 @@ class ExpoGdalPdfiumModule : Module() {
           )
         )
       } catch (e: Exception) {
-        Log.e("ExpoGdalPdfium", "Error reading GeoPDF", e)
+        Log.e("ExpoGdal", "Error reading GeoPDF", e)
         promise.resolve(
           createResponseMap(
             "Error reading GeoPDF: ${e.message}",
@@ -330,26 +330,26 @@ class ExpoGdalPdfiumModule : Module() {
     // Renders a GeoPDF file to a PNG image file
     AsyncFunction("renderGeoPDFToPng") { inputPath: String, outputPath: String, promise: Promise ->
       try {
-        Log.i("ExpoGdalPdfium", "[NEW CODE v2] Rendering GeoPDF to PNG: $inputPath -> $outputPath")
+        Log.i("ExpoGdal", "[NEW CODE v2] Rendering GeoPDF to PNG: $inputPath -> $outputPath")
         
         // Check if file exists before attempting to open
         val inputFile = java.io.File(inputPath)
         
         // Log detailed file information for debugging
-        Log.i("ExpoGdalPdfium", "File check - Path: $inputPath")
-        Log.i("ExpoGdalPdfium", "File check - Absolute path: ${inputFile.absolutePath}")
-        Log.i("ExpoGdalPdfium", "File check - Exists: ${inputFile.exists()}")
-        Log.i("ExpoGdalPdfium", "File check - Is file: ${inputFile.isFile}")
-        Log.i("ExpoGdalPdfium", "File check - Is directory: ${inputFile.isDirectory}")
-        Log.i("ExpoGdalPdfium", "File check - Can read: ${inputFile.canRead()}")
-        Log.i("ExpoGdalPdfium", "File check - Can write: ${inputFile.canWrite()}")
+        Log.i("ExpoGdal", "File check - Path: $inputPath")
+        Log.i("ExpoGdal", "File check - Absolute path: ${inputFile.absolutePath}")
+        Log.i("ExpoGdal", "File check - Exists: ${inputFile.exists()}")
+        Log.i("ExpoGdal", "File check - Is file: ${inputFile.isFile}")
+        Log.i("ExpoGdal", "File check - Is directory: ${inputFile.isDirectory}")
+        Log.i("ExpoGdal", "File check - Can read: ${inputFile.canRead()}")
+        Log.i("ExpoGdal", "File check - Can write: ${inputFile.canWrite()}")
         if (inputFile.exists()) {
-          Log.i("ExpoGdalPdfium", "File check - Size: ${inputFile.length()} bytes")
-          Log.i("ExpoGdalPdfium", "File check - Last modified: ${inputFile.lastModified()}")
+          Log.i("ExpoGdal", "File check - Size: ${inputFile.length()} bytes")
+          Log.i("ExpoGdal", "File check - Last modified: ${inputFile.lastModified()}")
         }
         
         if (!inputFile.exists()) {
-          Log.e("ExpoGdalPdfium", "File does not exist: $inputPath")
+          Log.e("ExpoGdal", "File does not exist: $inputPath")
           promise.resolve(
             createResponseMap(
               "Failed to open GeoPDF file for rendering",
@@ -370,7 +370,7 @@ class ExpoGdalPdfiumModule : Module() {
         }
         
         if (inputFile.length() == 0L) {
-          Log.e("ExpoGdalPdfium", "File is empty: $inputPath")
+          Log.e("ExpoGdal", "File is empty: $inputPath")
           promise.resolve(
             createResponseMap(
               "Failed to open GeoPDF file for rendering",
@@ -383,7 +383,7 @@ class ExpoGdalPdfiumModule : Module() {
         }
         
         if (!inputFile.canRead()) {
-          Log.e("ExpoGdalPdfium", "File cannot be read (permissions): $inputPath")
+          Log.e("ExpoGdal", "File cannot be read (permissions): $inputPath")
           promise.resolve(
             createResponseMap(
               "Failed to open GeoPDF file for rendering",
@@ -395,7 +395,7 @@ class ExpoGdalPdfiumModule : Module() {
           return@AsyncFunction
         }
         
-        Log.i("ExpoGdalPdfium", "File exists and is readable. Size: ${inputFile.length()} bytes")
+        Log.i("ExpoGdal", "File exists and is readable. Size: ${inputFile.length()} bytes")
         
         // Register all drivers first
         gdal.AllRegister()
@@ -403,7 +403,7 @@ class ExpoGdalPdfiumModule : Module() {
         // Get GDAL error before opening (to clear any previous errors)
         val previousError = gdal.GetLastErrorMsg()
         if (previousError != null && previousError.isNotEmpty()) {
-          Log.w("ExpoGdalPdfium", "Previous GDAL error (clearing): $previousError")
+          Log.w("ExpoGdal", "Previous GDAL error (clearing): $previousError")
         }
         
         // Open the GeoPDF file
@@ -414,7 +414,7 @@ class ExpoGdalPdfiumModule : Module() {
           val gdalError = gdal.GetLastErrorMsg()
           val errorType = gdal.GetLastErrorType()
           
-          Log.e("ExpoGdalPdfium", "[NEW CODE v2] GDAL raster API failed to open file. Error: $gdalError (Type: $errorType)")
+          Log.e("ExpoGdal", "[NEW CODE v2] GDAL raster API failed to open file. Error: $gdalError (Type: $errorType)")
           
           // Check if this might be a GEODETIC PDF (GDAL doesn't support GEODETIC projection)
           // Error message format: "Unhandled (yet) value for ProjectionType : GEODETIC"
@@ -423,16 +423,16 @@ class ExpoGdalPdfiumModule : Module() {
             (gdalError.contains("Unhandled", ignoreCase = true) && gdalError.contains("ProjectionType", ignoreCase = true))
           )
           
-          Log.i("ExpoGdalPdfium", "[NEW CODE v2] GEODETIC detection: isGeodetic=$isGeodetic, error='$gdalError'")
+          Log.i("ExpoGdal", "[NEW CODE v2] GEODETIC detection: isGeodetic=$isGeodetic, error='$gdalError'")
           
           if (isGeodetic) {
-            Log.i("ExpoGdalPdfium", "Detected GEODETIC PDF - attempting fallback with Android PdfRenderer")
+            Log.i("ExpoGdal", "Detected GEODETIC PDF - attempting fallback with Android PdfRenderer")
             
             // Try to extract metadata by searching PDF file for coordinate patterns
             // Also try OGR vector API as a fallback
             var metadata = tryExtractMetadataWithOGR(inputPath)
             if (metadata == null) {
-              Log.i("ExpoGdalPdfium", "Pattern matching failed, trying OGR vector API...")
+              Log.i("ExpoGdal", "Pattern matching failed, trying OGR vector API...")
               metadata = tryExtractMetadataWithOGRVector(inputPath)
             }
             
@@ -440,11 +440,11 @@ class ExpoGdalPdfiumModule : Module() {
             val renderResult = renderPDFWithAndroidPdfRenderer(inputPath, outputPath, metadata)
             
             if (renderResult != null) {
-              Log.i("ExpoGdalPdfium", "✓ GEODETIC PDF successfully rendered with PdfRenderer fallback")
+              Log.i("ExpoGdal", "✓ GEODETIC PDF successfully rendered with PdfRenderer fallback")
               promise.resolve(renderResult)
               return@AsyncFunction
             } else {
-              Log.w("ExpoGdalPdfium", "Android PdfRenderer fallback also failed")
+              Log.w("ExpoGdal", "Android PdfRenderer fallback also failed")
             }
           }
           
@@ -479,8 +479,8 @@ class ExpoGdalPdfiumModule : Module() {
           val geoTransform = DoubleArray(6)
           dataset.GetGeoTransform(geoTransform)
           
-          Log.i("ExpoGdalPdfium", "Dataset dimensions: ${width}x${height}, bands: $bandCount")
-          Log.i("ExpoGdalPdfium", "GeoTransform: ${geoTransform.joinToString(", ")}")
+          Log.i("ExpoGdal", "Dataset dimensions: ${width}x${height}, bands: $bandCount")
+          Log.i("ExpoGdal", "GeoTransform: ${geoTransform.joinToString(", ")}")
           
           // Calculate corner and center coordinates from GeoTransform
           // GeoTransform format: [topLeftX, pixelWidth, rotationX, topLeftY, rotationY, pixelHeight]
@@ -525,13 +525,13 @@ class ExpoGdalPdfiumModule : Module() {
           // Only transform if projection is available
           if (projectionWkt != null && projectionWkt.isNotEmpty()) {
             try {
-              Log.i("ExpoGdalPdfium", "Projection WKT: ${projectionWkt.take(200)}...") // Log first 200 chars
+              Log.i("ExpoGdal", "Projection WKT: ${projectionWkt.take(200)}...") // Log first 200 chars
               
               // Create source Spatial Reference System from WKT
               val sourceSRS = SpatialReference()
               val importResult = sourceSRS.ImportFromWkt(projectionWkt)
               if (importResult != 0) {
-                Log.w("ExpoGdalPdfium", "Failed to import source SRS from WKT. Error code: $importResult")
+                Log.w("ExpoGdal", "Failed to import source SRS from WKT. Error code: $importResult")
                 throw Exception("Failed to import source SRS from WKT")
               }
               
@@ -541,7 +541,7 @@ class ExpoGdalPdfiumModule : Module() {
               val targetSRS = SpatialReference()
               val wktResult = targetSRS.ImportFromWkt(wgs84Wkt)
               if (wktResult != 0) {
-                Log.w("ExpoGdalPdfium", "Failed to import target SRS (WGS84) from WKT. Error code: $wktResult")
+                Log.w("ExpoGdal", "Failed to import target SRS (WGS84) from WKT. Error code: $wktResult")
                 throw Exception("Failed to import target SRS (WGS84) from WKT")
               }
               
@@ -570,15 +570,15 @@ class ExpoGdalPdfiumModule : Module() {
               centerLng = centerTransformed[0]
               centerLat = centerTransformed[1]
               
-              Log.i("ExpoGdalPdfium", "Coordinates transformed to WGS84 (EPSG:4326)")
-              Log.i("ExpoGdalPdfium", "TopLeft WGS84: ($topLeftLng, $topLeftLat)")
+              Log.i("ExpoGdal", "Coordinates transformed to WGS84 (EPSG:4326)")
+              Log.i("ExpoGdal", "TopLeft WGS84: ($topLeftLng, $topLeftLat)")
             } catch (e: Exception) {
-              Log.e("ExpoGdalPdfium", "Failed to transform coordinates to WGS84", e)
-              Log.w("ExpoGdalPdfium", "Error details: ${e.message}, ${e.javaClass.simpleName}. Using native CRS coordinates.")
+              Log.e("ExpoGdal", "Failed to transform coordinates to WGS84", e)
+              Log.w("ExpoGdal", "Error details: ${e.message}, ${e.javaClass.simpleName}. Using native CRS coordinates.")
               // If transformation fails, use original coordinates (already set above)
             }
           } else {
-            Log.w("ExpoGdalPdfium", "No projection information available. Using native coordinates.")
+            Log.w("ExpoGdal", "No projection information available. Using native coordinates.")
           }
           
           // Read raster data directly and convert to PNG using Android Bitmap API
@@ -703,7 +703,7 @@ class ExpoGdalPdfiumModule : Module() {
               return@AsyncFunction
             }
             
-            Log.i("ExpoGdalPdfium", "Successfully rendered PNG: $outputPath (size: ${outputFile.length()} bytes)")
+            Log.i("ExpoGdal", "Successfully rendered PNG: $outputPath (size: ${outputFile.length()} bytes)")
             
             promise.resolve(
               createResponseMap(
@@ -725,7 +725,7 @@ class ExpoGdalPdfiumModule : Module() {
               )
             )
           } catch (e: Exception) {
-            Log.e("ExpoGdalPdfium", "Error writing PNG file", e)
+            Log.e("ExpoGdal", "Error writing PNG file", e)
             promise.resolve(
               createResponseMap(
                 "Failed to render GeoPDF to PNG",
@@ -742,7 +742,7 @@ class ExpoGdalPdfiumModule : Module() {
           dataset.delete()
         }
       } catch (e: ClassNotFoundException) {
-        Log.e("ExpoGdalPdfium", "GDAL classes not found", e)
+        Log.e("ExpoGdal", "GDAL classes not found", e)
         promise.resolve(
           createResponseMap(
             "GDAL classes not found",
@@ -752,7 +752,7 @@ class ExpoGdalPdfiumModule : Module() {
           )
         )
       } catch (e: UnsatisfiedLinkError) {
-        Log.e("ExpoGdalPdfium", "GDAL native library not loaded", e)
+        Log.e("ExpoGdal", "GDAL native library not loaded", e)
         promise.resolve(
           createResponseMap(
             "GDAL native library not loaded",
@@ -762,7 +762,7 @@ class ExpoGdalPdfiumModule : Module() {
           )
         )
       } catch (e: Exception) {
-        Log.e("ExpoGdalPdfium", "Error rendering GeoPDF", e)
+        Log.e("ExpoGdal", "Error rendering GeoPDF", e)
         promise.resolve(
           createResponseMap(
             "Error rendering GeoPDF: ${e.message}",
@@ -781,7 +781,7 @@ class ExpoGdalPdfiumModule : Module() {
     // Reads PDF file content and uses regex patterns to extract geospatial structures
     AsyncFunction("extractRawMetadata") { filePath: String, promise: Promise ->
       try {
-        Log.i("ExpoGdalPdfium", "Extracting raw metadata from PDF: $filePath")
+        Log.i("ExpoGdal", "Extracting raw metadata from PDF: $filePath")
         
         val pdfFile = File(filePath)
         if (!pdfFile.exists() || !pdfFile.canRead()) {
@@ -811,7 +811,7 @@ class ExpoGdalPdfiumModule : Module() {
           )
         )
       } catch (e: Exception) {
-        Log.e("ExpoGdalPdfium", "Error extracting raw metadata", e)
+        Log.e("ExpoGdal", "Error extracting raw metadata", e)
         promise.resolve(
           createResponseMap(
             "Error extracting raw metadata: ${e.message}",
@@ -825,9 +825,9 @@ class ExpoGdalPdfiumModule : Module() {
 
     // Enables the module to be used as a native view. Definition components that are accepted as part of
     // the view definition: Prop, Events.
-    View(ExpoGdalPdfiumView::class) {
+    View(ExpoGdalView::class) {
       // Defines a setter for the `url` prop.
-      Prop("url") { view: ExpoGdalPdfiumView, url: URL ->
+      Prop("url") { view: ExpoGdalView, url: URL ->
         view.webView.loadUrl(url.toString())
       }
       // Defines an event that the view can send to JavaScript.
@@ -854,7 +854,7 @@ class ExpoGdalPdfiumModule : Module() {
     // Removed regex-based extraction - restoring to original GitHub version
     // For GEODETIC PDFs, GDAL cannot extract metadata, so we return default coordinates
     try {
-      Log.i("ExpoGdalPdfium", "Attempting to extract geospatial metadata using GDAL only...")
+      Log.i("ExpoGdal", "Attempting to extract geospatial metadata using GDAL only...")
       
       // Try to use GDAL to read metadata (even if it can't render)
       // This might work even with GEODETIC projection
@@ -927,19 +927,19 @@ class ExpoGdalPdfiumModule : Module() {
                   bottomRightLng = bottomRightTransformed[0]
                   bottomRightLat = bottomRightTransformed[1]
                   
-                  Log.i("ExpoGdalPdfium", "Successfully extracted and transformed coordinates from GDAL")
+                  Log.i("ExpoGdal", "Successfully extracted and transformed coordinates from GDAL")
                 } catch (e: Exception) {
-                  Log.w("ExpoGdalPdfium", "Could not transform coordinates, using native CRS: ${e.message}")
+                  Log.w("ExpoGdal", "Could not transform coordinates, using native CRS: ${e.message}")
                   // Use native coordinates (might already be WGS84 for GEODETIC)
                 }
               } else {
                 // For GEODETIC, coordinates are likely already in WGS84
-                Log.i("ExpoGdalPdfium", "Using coordinates directly (likely WGS84 for GEODETIC)")
+                Log.i("ExpoGdal", "Using coordinates directly (likely WGS84 for GEODETIC)")
               }
               
               // Validate coordinates are in reasonable range
               if (topLeftLng >= -180 && topLeftLng <= 180 && topLeftLat >= -90 && topLeftLat <= 90) {
-                Log.i("ExpoGdalPdfium", "Extracted coordinates from GDAL: TL($topLeftLng, $topLeftLat), BR($bottomRightLng, $bottomRightLat)")
+                Log.i("ExpoGdal", "Extracted coordinates from GDAL: TL($topLeftLng, $topLeftLat), BR($bottomRightLng, $bottomRightLat)")
                 return GeoMetadata(
                   topLeftLng = topLeftLng,
                   topLeftLat = topLeftLat,
@@ -959,13 +959,13 @@ class ExpoGdalPdfiumModule : Module() {
           }
         }
       } catch (e: Exception) {
-        Log.w("ExpoGdalPdfium", "GDAL metadata extraction failed: ${e.message}")
+        Log.w("ExpoGdal", "GDAL metadata extraction failed: ${e.message}")
         // For GEODETIC PDFs, GDAL cannot extract metadata
       }
       
       // GDAL failed - return default coordinates (user will need to georeference manually)
-      Log.w("ExpoGdalPdfium", "Could not extract geospatial metadata using GDAL. Returning default coordinates (0,0).")
-      Log.w("ExpoGdalPdfium", "This PDF may require manual georeferencing.")
+      Log.w("ExpoGdal", "Could not extract geospatial metadata using GDAL. Returning default coordinates (0,0).")
+      Log.w("ExpoGdal", "This PDF may require manual georeferencing.")
       return GeoMetadata(
         topLeftLng = 0.0,
         topLeftLat = 0.0,
@@ -979,7 +979,7 @@ class ExpoGdalPdfiumModule : Module() {
         centerLat = 0.0
       )
     } catch (e: Exception) {
-      Log.e("ExpoGdalPdfium", "Error extracting geospatial metadata", e)
+      Log.e("ExpoGdal", "Error extracting geospatial metadata", e)
       // Return default coordinates on error
       return GeoMetadata(
         topLeftLng = 0.0,
@@ -1000,7 +1000,7 @@ class ExpoGdalPdfiumModule : Module() {
   // This is a fallback for GEODETIC PDFs where GDAL can't extract metadata
   private fun tryExtractMetadataWithOGR(pdfPath: String): GeoMetadata? {
     try {
-      Log.i("ExpoGdalPdfium", "Attempting to extract metadata by searching PDF for coordinate patterns...")
+      Log.i("ExpoGdal", "Attempting to extract metadata by searching PDF for coordinate patterns...")
       
       val pdfFile = File(pdfPath)
       if (!pdfFile.exists() || !pdfFile.canRead()) {
@@ -1046,7 +1046,7 @@ class ExpoGdalPdfiumModule : Module() {
           // Validate coordinates are in reasonable WGS84 range
           if (llx >= -180 && llx <= 180 && lly >= -90 && lly <= 90 &&
               urx >= -180 && urx <= 180 && ury >= -90 && ury <= 90) {
-            Log.i("ExpoGdalPdfium", "Found coordinates via pattern matching: LL($llx, $lly), UR($urx, $ury)")
+            Log.i("ExpoGdal", "Found coordinates via pattern matching: LL($llx, $lly), UR($urx, $ury)")
             
             // For GEODETIC, coordinates are typically [longitude, latitude] in WGS84
             // LLX/LLY = lower left, URX/URY = upper right
@@ -1064,7 +1064,7 @@ class ExpoGdalPdfiumModule : Module() {
             )
           }
         } catch (e: NumberFormatException) {
-          Log.w("ExpoGdalPdfium", "Could not parse coordinate values: ${e.message}")
+          Log.w("ExpoGdal", "Could not parse coordinate values: ${e.message}")
         }
       }
       
@@ -1090,7 +1090,7 @@ class ExpoGdalPdfiumModule : Module() {
             val minLat = minOf(coord2, coord4)
             val maxLat = maxOf(coord2, coord4)
             
-            Log.i("ExpoGdalPdfium", "Found bounding box via pattern matching: [$minLng, $minLat] to [$maxLng, $maxLat]")
+            Log.i("ExpoGdal", "Found bounding box via pattern matching: [$minLng, $minLat] to [$maxLng, $maxLat]")
             
             return GeoMetadata(
               topLeftLng = minLng,
@@ -1110,10 +1110,10 @@ class ExpoGdalPdfiumModule : Module() {
         }
       }
       
-      Log.w("ExpoGdalPdfium", "Could not find coordinate patterns in PDF file")
+      Log.w("ExpoGdal", "Could not find coordinate patterns in PDF file")
       return null
     } catch (e: Exception) {
-      Log.w("ExpoGdalPdfium", "Metadata extraction via pattern matching failed: ${e.message}")
+      Log.w("ExpoGdal", "Metadata extraction via pattern matching failed: ${e.message}")
       return null
     }
   }
@@ -1121,7 +1121,7 @@ class ExpoGdalPdfiumModule : Module() {
   // Try to extract metadata using OGR vector API (for GEODETIC PDFs)
   private fun tryExtractMetadataWithOGRVector(pdfPath: String): GeoMetadata? {
     try {
-      Log.i("ExpoGdalPdfium", "Attempting to extract metadata using OGR vector API...")
+      Log.i("ExpoGdal", "Attempting to extract metadata using OGR vector API...")
       
       // Register OGR drivers
       ogr.RegisterAll()
@@ -1129,13 +1129,13 @@ class ExpoGdalPdfiumModule : Module() {
       // Try to open PDF with OGR vector driver
       val dataSource = ogr.Open(pdfPath, 0)
       if (dataSource == null) {
-        Log.w("ExpoGdalPdfium", "OGR vector API could not open PDF file")
+        Log.w("ExpoGdal", "OGR vector API could not open PDF file")
         return null
       }
       
       try {
         val layerCount = dataSource.GetLayerCount()
-        Log.i("ExpoGdalPdfium", "OGR found $layerCount layers in PDF")
+        Log.i("ExpoGdal", "OGR found $layerCount layers in PDF")
         
         // Iterate through layers to find geometry
         for (i in 0 until layerCount) {
@@ -1143,13 +1143,13 @@ class ExpoGdalPdfiumModule : Module() {
           if (layer == null) continue
           
           val featureCount = layer.GetFeatureCount()
-          Log.i("ExpoGdalPdfium", "Layer $i has $featureCount features")
+          Log.i("ExpoGdal", "Layer $i has $featureCount features")
           
           // Get spatial reference
           val spatialRef = layer.GetSpatialRef()
           if (spatialRef != null) {
             val proj4 = spatialRef.ExportToProj4()
-            Log.i("ExpoGdalPdfium", "Layer $i spatial reference: $proj4")
+            Log.i("ExpoGdal", "Layer $i spatial reference: $proj4")
           }
           
           // Get extent (bounding box)
@@ -1160,7 +1160,7 @@ class ExpoGdalPdfiumModule : Module() {
             val minY = extent[2]
             val maxY = extent[3]
             
-            Log.i("ExpoGdalPdfium", "Layer $i extent: [$minX, $minY] to [$maxX, $maxY]")
+            Log.i("ExpoGdal", "Layer $i extent: [$minX, $minY] to [$maxX, $maxY]")
             
             // Check if coordinates look valid (WGS84 range)
             if (minX >= -180 && maxX <= 180 && minY >= -90 && maxY <= 90) {
@@ -1189,7 +1189,7 @@ class ExpoGdalPdfiumModule : Module() {
                   val transformedMaxX = maxPoint[0]
                   val transformedMaxY = maxPoint[1]
                   
-                  Log.i("ExpoGdalPdfium", "Transformed extent to WGS84: [$transformedMinX, $transformedMinY] to [$transformedMaxX, $transformedMaxY]")
+                  Log.i("ExpoGdal", "Transformed extent to WGS84: [$transformedMinX, $transformedMinY] to [$transformedMaxX, $transformedMaxY]")
                   
                   return GeoMetadata(
                     topLeftLng = transformedMinX,
@@ -1223,13 +1223,13 @@ class ExpoGdalPdfiumModule : Module() {
           }
         }
         
-        Log.w("ExpoGdalPdfium", "OGR vector API found layers but no valid coordinates")
+        Log.w("ExpoGdal", "OGR vector API found layers but no valid coordinates")
         return null
       } finally {
         dataSource.delete()
       }
     } catch (e: Exception) {
-      Log.w("ExpoGdalPdfium", "Metadata extraction via OGR vector API failed: ${e.message}")
+      Log.w("ExpoGdal", "Metadata extraction via OGR vector API failed: ${e.message}")
       e.printStackTrace()
       return null
     }
@@ -1242,11 +1242,11 @@ class ExpoGdalPdfiumModule : Module() {
     metadata: GeoMetadata?
   ): Map<String, Any>? {
     try {
-      Log.i("ExpoGdalPdfium", "Rendering PDF with Android PdfRenderer (GEODETIC fallback)...")
+      Log.i("ExpoGdal", "Rendering PDF with Android PdfRenderer (GEODETIC fallback)...")
       
       val inputFile = File(inputPath)
       if (!inputFile.exists() || !inputFile.canRead()) {
-        Log.e("ExpoGdalPdfium", "PDF file not accessible for PdfRenderer")
+        Log.e("ExpoGdal", "PDF file not accessible for PdfRenderer")
         return null
       }
       
@@ -1258,7 +1258,7 @@ class ExpoGdalPdfiumModule : Module() {
         // Get first page (PDFs typically have geospatial data on first page)
         val pageCount = pdfRenderer.pageCount
         if (pageCount == 0) {
-          Log.e("ExpoGdalPdfium", "PDF has no pages")
+          Log.e("ExpoGdal", "PDF has no pages")
           return null
         }
         
@@ -1271,7 +1271,7 @@ class ExpoGdalPdfiumModule : Module() {
           val width = (page.width * scale).toInt()
           val height = (page.height * scale).toInt()
           
-          Log.i("ExpoGdalPdfium", "Rendering PDF page: ${page.width}x${page.height} -> ${width}x${height}")
+          Log.i("ExpoGdal", "Rendering PDF page: ${page.width}x${page.height} -> ${width}x${height}")
           
           // Create bitmap
           val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
@@ -1290,11 +1290,11 @@ class ExpoGdalPdfiumModule : Module() {
           bitmap.recycle()
           
           if (!outputFile.exists() || outputFile.length() == 0L) {
-            Log.e("ExpoGdalPdfium", "Failed to write PNG file")
+            Log.e("ExpoGdal", "Failed to write PNG file")
             return null
           }
           
-          Log.i("ExpoGdalPdfium", "Successfully rendered PDF with PdfRenderer: $outputPath (size: ${outputFile.length()} bytes)")
+          Log.i("ExpoGdal", "Successfully rendered PDF with PdfRenderer: $outputPath (size: ${outputFile.length()} bytes)")
           
           // Use metadata if available, otherwise return with default coordinates
           // User will need to manually georeference if metadata extraction failed
@@ -1337,7 +1337,7 @@ class ExpoGdalPdfiumModule : Module() {
         fileDescriptor.close()
       }
     } catch (e: Exception) {
-      Log.e("ExpoGdalPdfium", "Error rendering PDF with Android PdfRenderer", e)
+      Log.e("ExpoGdal", "Error rendering PDF with Android PdfRenderer", e)
       return null
     }
   }
@@ -1365,15 +1365,15 @@ class ExpoGdalPdfiumModule : Module() {
     val ctmMatrices = mutableListOf<Map<String, Any>>()
     
     try {
-      Log.i("ExpoGdalPdfium", "Starting geospatial structure extraction from PDF: ${pdfFile.absolutePath}")
-      Log.i("ExpoGdalPdfium", "PDF file size: ${pdfFile.length()} bytes")
+      Log.i("ExpoGdal", "Starting geospatial structure extraction from PDF: ${pdfFile.absolutePath}")
+      Log.i("ExpoGdal", "PDF file size: ${pdfFile.length()} bytes")
       
       // Read PDF file as bytes (limit to first 2MB to avoid memory issues)
       val maxBytes = 2 * 1024 * 1024 // 2MB
       val fileSize = pdfFile.length().toInt()
       val bytesToRead = minOf(fileSize, maxBytes)
       
-      Log.i("ExpoGdalPdfium", "Reading first $bytesToRead bytes of PDF file")
+      Log.i("ExpoGdal", "Reading first $bytesToRead bytes of PDF file")
       
       val fileBytes = ByteArray(bytesToRead)
       val raf = RandomAccessFile(pdfFile, "r")
@@ -1382,7 +1382,7 @@ class ExpoGdalPdfiumModule : Module() {
       
       // Convert to string for pattern matching
       val content = String(fileBytes, StandardCharsets.ISO_8859_1)
-      Log.i("ExpoGdalPdfium", "PDF content length: ${content.length} characters")
+      Log.i("ExpoGdal", "PDF content length: ${content.length} characters")
       
       // Search for LGIDict objects (including object 13 pattern)
       // Pattern: /LGIDict or << /Type /LGIDict
@@ -1394,49 +1394,49 @@ class ExpoGdalPdfiumModule : Module() {
       while (lgidictMatcher.find(searchStart)) {
         lgidictCount++
         val lgidictStart = lgidictMatcher.start()
-        Log.i("ExpoGdalPdfium", "Found LGIDict #$lgidictCount at position $lgidictStart")
+        Log.i("ExpoGdal", "Found LGIDict #$lgidictCount at position $lgidictStart")
         
         // Find the end of this LGIDict object (look for >> or end of object)
         val lgidictEnd = findObjectEnd(content, lgidictStart)
         if (lgidictEnd > lgidictStart) {
           val lgidictContent = content.substring(lgidictStart, lgidictEnd)
-          Log.i("ExpoGdalPdfium", "LGIDict #$lgidictCount content length: ${lgidictContent.length} characters")
+          Log.i("ExpoGdal", "LGIDict #$lgidictCount content length: ${lgidictContent.length} characters")
           
           // Try to extract Registration array
           val registration = extractRegistrationArray(lgidictContent)
           if (registration != null) {
             registrationArrays.add(registration)
-            Log.i("ExpoGdalPdfium", "✅ Found Registration array in LGIDict #$lgidictCount")
+            Log.i("ExpoGdal", "✅ Found Registration array in LGIDict #$lgidictCount")
           } else {
-            Log.w("ExpoGdalPdfium", "⚠️ No Registration array found in LGIDict #$lgidictCount")
+            Log.w("ExpoGdal", "⚠️ No Registration array found in LGIDict #$lgidictCount")
           }
           
           // Try to extract CTM matrix
           val ctm = extractCTMFromLGIDict(lgidictContent)
           if (ctm != null) {
             ctmMatrices.add(ctm)
-            Log.i("ExpoGdalPdfium", "✅ Found CTM matrix in LGIDict #$lgidictCount")
+            Log.i("ExpoGdal", "✅ Found CTM matrix in LGIDict #$lgidictCount")
           } else {
-            Log.w("ExpoGdalPdfium", "⚠️ No CTM matrix found in LGIDict #$lgidictCount")
+            Log.w("ExpoGdal", "⚠️ No CTM matrix found in LGIDict #$lgidictCount")
           }
           
           searchStart = lgidictEnd
         } else {
-          Log.w("ExpoGdalPdfium", "⚠️ Could not find end of LGIDict #$lgidictCount")
+          Log.w("ExpoGdal", "⚠️ Could not find end of LGIDict #$lgidictCount")
           searchStart = lgidictMatcher.end()
         }
       }
       
       // Always try searching for /Registration directly (even if LGIDict was found)
       // Some PDFs may have Registration outside of LGIDict
-      Log.i("ExpoGdalPdfium", "Searching for /Registration pattern directly in PDF content...")
+      Log.i("ExpoGdal", "Searching for /Registration pattern directly in PDF content...")
       val directRegistrationPattern = Pattern.compile("/Registration\\s*\\[", Pattern.CASE_INSENSITIVE)
       val directRegMatcher = directRegistrationPattern.matcher(content)
       var directRegCount = 0
       var searchPos = 0
       while (directRegMatcher.find(searchPos)) {
         directRegCount++
-        Log.i("ExpoGdalPdfium", "Found /Registration pattern #$directRegCount at position ${directRegMatcher.start()}")
+        Log.i("ExpoGdal", "Found /Registration pattern #$directRegCount at position ${directRegMatcher.start()}")
         val regStart = directRegMatcher.start()
         // Search backwards to find the start of the object (might be in a dictionary)
         var contextStart = maxOf(0, regStart - 200) // Look back 200 chars for context
@@ -1446,19 +1446,19 @@ class ExpoGdalPdfiumModule : Module() {
           val registration = extractRegistrationArray(regContent)
           if (registration != null) {
             registrationArrays.add(registration)
-            Log.i("ExpoGdalPdfium", "✅ Found Registration array #$directRegCount via direct pattern")
+            Log.i("ExpoGdal", "✅ Found Registration array #$directRegCount via direct pattern")
             break // Use first valid registration found
           } else {
-            Log.w("ExpoGdalPdfium", "⚠️ Registration pattern #$directRegCount found but couldn't parse")
+            Log.w("ExpoGdal", "⚠️ Registration pattern #$directRegCount found but couldn't parse")
           }
         }
         searchPos = directRegMatcher.end()
       }
       
       if (directRegCount == 0 && lgidictCount == 0) {
-        Log.w("ExpoGdalPdfium", "⚠️ No LGIDict objects and no /Registration patterns found in PDF")
+        Log.w("ExpoGdal", "⚠️ No LGIDict objects and no /Registration patterns found in PDF")
         // Try searching for other geospatial patterns like /LLX, /LLY, /URX, /URY
-        Log.i("ExpoGdalPdfium", "Trying alternative geospatial patterns (/LLX, /LLY, /URX, /URY)...")
+        Log.i("ExpoGdal", "Trying alternative geospatial patterns (/LLX, /LLY, /URX, /URY)...")
         val llxPattern = Pattern.compile("/LLX\\s+([-+]?\\d+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
         val llyPattern = Pattern.compile("/LLY\\s+([-+]?\\d+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
         val urxPattern = Pattern.compile("/URX\\s+([-+]?\\d+\\.?\\d*)", Pattern.CASE_INSENSITIVE)
@@ -1476,7 +1476,7 @@ class ExpoGdalPdfiumModule : Module() {
             val urx = urxMatcher.group(1).toDouble()
             val ury = uryMatcher.group(1).toDouble()
             
-            Log.i("ExpoGdalPdfium", "Found bounding box: LLX=$llx, LLY=$lly, URX=$urx, URY=$ury")
+            Log.i("ExpoGdal", "Found bounding box: LLX=$llx, LLY=$lly, URX=$urx, URY=$ury")
             
             // Validate coordinates
             if (llx >= -180 && llx <= 180 && lly >= -90 && lly <= 90 &&
@@ -1495,10 +1495,10 @@ class ExpoGdalPdfiumModule : Module() {
                 )
               )
               registrationArrays.add(registration)
-              Log.i("ExpoGdalPdfium", "✅ Created Registration array from /LLX, /LLY, /URX, /URY patterns")
+              Log.i("ExpoGdal", "✅ Created Registration array from /LLX, /LLY, /URX, /URY patterns")
             }
           } catch (e: Exception) {
-            Log.w("ExpoGdalPdfium", "Error parsing /LLX, /LLY, /URX, /URY: ${e.message}")
+            Log.w("ExpoGdal", "Error parsing /LLX, /LLY, /URX, /URY: ${e.message}")
           }
         }
       }
@@ -1510,9 +1510,9 @@ class ExpoGdalPdfiumModule : Module() {
         structures["CTM"] = ctmMatrices
       }
       
-      Log.i("ExpoGdalPdfium", "Extraction complete: ${registrationArrays.size} Registration arrays and ${ctmMatrices.size} CTM matrices")
+      Log.i("ExpoGdal", "Extraction complete: ${registrationArrays.size} Registration arrays and ${ctmMatrices.size} CTM matrices")
     } catch (e: Exception) {
-      Log.e("ExpoGdalPdfium", "Error extracting geospatial structures", e)
+      Log.e("ExpoGdal", "Error extracting geospatial structures", e)
       e.printStackTrace()
     }
     
@@ -1526,7 +1526,7 @@ class ExpoGdalPdfiumModule : Module() {
   // 3. /Registration [ px1 py1 lon1 lat1 px2 py2 lon2 lat2 ]
   private fun extractRegistrationArray(lgidictContent: String): Map<String, Any>? {
     try {
-      Log.d("ExpoGdalPdfium", "Attempting to extract Registration array from content (${lgidictContent.length} chars)")
+      Log.d("ExpoGdal", "Attempting to extract Registration array from content (${lgidictContent.length} chars)")
       
       // Pattern 1: With parentheses: /Registration [ [ (px1) (py1) (lon1) (lat1) ] [ (px2) (py2) (lon2) (lat2) ] ]
       var registrationPattern = Pattern.compile(
@@ -1536,7 +1536,7 @@ class ExpoGdalPdfiumModule : Module() {
       
       var matcher = registrationPattern.matcher(lgidictContent)
       if (matcher.find()) {
-        Log.i("ExpoGdalPdfium", "Found Registration array with Pattern 1 (with parentheses)")
+        Log.i("ExpoGdal", "Found Registration array with Pattern 1 (with parentheses)")
         return parseRegistrationPoints(matcher, true)
       }
       
@@ -1548,7 +1548,7 @@ class ExpoGdalPdfiumModule : Module() {
       
       matcher = registrationPattern.matcher(lgidictContent)
       if (matcher.find()) {
-        Log.i("ExpoGdalPdfium", "Found Registration array with Pattern 2 (without parentheses)")
+        Log.i("ExpoGdal", "Found Registration array with Pattern 2 (without parentheses)")
         return parseRegistrationPoints(matcher, false)
       }
       
@@ -1560,7 +1560,7 @@ class ExpoGdalPdfiumModule : Module() {
       
       matcher = registrationPattern.matcher(lgidictContent)
       if (matcher.find()) {
-        Log.i("ExpoGdalPdfium", "Found Registration array with Pattern 3 (single array)")
+        Log.i("ExpoGdal", "Found Registration array with Pattern 3 (single array)")
         return parseRegistrationPoints(matcher, false)
       }
       
@@ -1572,17 +1572,17 @@ class ExpoGdalPdfiumModule : Module() {
       
       matcher = registrationPattern.matcher(lgidictContent)
       if (matcher.find()) {
-        Log.i("ExpoGdalPdfium", "Found Registration array with Pattern 4 (flexible)")
+        Log.i("ExpoGdal", "Found Registration array with Pattern 4 (flexible)")
         return parseRegistrationPoints(matcher, false)
       }
       
-      Log.w("ExpoGdalPdfium", "No Registration array pattern matched")
+      Log.w("ExpoGdal", "No Registration array pattern matched")
       // Log a sample of the content for debugging
       val sample = lgidictContent.take(500)
-      Log.d("ExpoGdalPdfium", "Content sample (first 500 chars): $sample")
+      Log.d("ExpoGdal", "Content sample (first 500 chars): $sample")
       
     } catch (e: Exception) {
-      Log.e("ExpoGdalPdfium", "Error extracting Registration array: ${e.message}")
+      Log.e("ExpoGdal", "Error extracting Registration array: ${e.message}")
       e.printStackTrace()
     }
     return null
@@ -1602,12 +1602,12 @@ class ExpoGdalPdfiumModule : Module() {
       val lon2 = matcher.group(7).toDouble()
       val lat2 = matcher.group(8).toDouble()
       
-      Log.i("ExpoGdalPdfium", "Parsed Registration points: P1(px=$px1, py=$py1, lon=$lon1, lat=$lat1), P2(px=$px2, py=$py2, lon=$lon2, lat=$lat2)")
+      Log.i("ExpoGdal", "Parsed Registration points: P1(px=$px1, py=$py1, lon=$lon1, lat=$lat1), P2(px=$px2, py=$py2, lon=$lon2, lat=$lat2)")
       
       // Validate coordinates are in reasonable ranges
       if (lon1 < -180 || lon1 > 180 || lon2 < -180 || lon2 > 180 ||
           lat1 < -90 || lat1 > 90 || lat2 < -90 || lat2 > 90) {
-        Log.w("ExpoGdalPdfium", "Registration coordinates out of valid range, but proceeding anyway")
+        Log.w("ExpoGdal", "Registration coordinates out of valid range, but proceeding anyway")
       }
       
       // Calculate bounds from the two registration points
@@ -1628,7 +1628,7 @@ class ExpoGdalPdfiumModule : Module() {
       val centerLng = (topLeftLng + bottomRightLng) / 2.0
       val centerLat = (topLeftLat + bottomRightLat) / 2.0
       
-      Log.i("ExpoGdalPdfium", "Calculated bounds: TL($topLeftLng, $topLeftLat), TR($topRightLng, $topRightLat), BR($bottomRightLng, $bottomRightLat), BL($bottomLeftLng, $bottomLeftLat)")
+      Log.i("ExpoGdal", "Calculated bounds: TL($topLeftLng, $topLeftLat), TR($topRightLng, $topRightLat), BR($bottomRightLng, $bottomRightLat), BL($bottomLeftLng, $bottomLeftLat)")
       
       return mapOf(
         "points" to listOf(
@@ -1644,7 +1644,7 @@ class ExpoGdalPdfiumModule : Module() {
         )
       )
     } catch (e: Exception) {
-      Log.e("ExpoGdalPdfium", "Error parsing Registration points: ${e.message}")
+      Log.e("ExpoGdal", "Error parsing Registration points: ${e.message}")
       e.printStackTrace()
       return null
     }
@@ -1673,7 +1673,7 @@ class ExpoGdalPdfiumModule : Module() {
         return mapOf("matrix" to matrix)
       }
     } catch (e: Exception) {
-      Log.w("ExpoGdalPdfium", "Error extracting CTM matrix: ${e.message}")
+      Log.w("ExpoGdal", "Error extracting CTM matrix: ${e.message}")
     }
     return null
   }

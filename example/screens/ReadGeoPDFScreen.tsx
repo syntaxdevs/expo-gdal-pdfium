@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Button, ScrollView, ActivityIndicator, TextInput, Alert, Image, Platform } from 'react-native';
-import { readGeoPDF, ReadGeoPDFResponse, renderGeoPDFToPng, RenderGeoPDFResponse, processGeoPDF, ProcessGeoPDFResponse } from 'expo-gdal-pdfium';
+import { readGeoPDF, ReadGeoPDFResponse, renderGeoPDFToPng, RenderGeoPDFResponse, processGeoPDF, ProcessGeoPDFResponse } from 'expo-gdal';
 import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 

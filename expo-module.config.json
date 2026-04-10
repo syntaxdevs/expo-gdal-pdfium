@@ -1,7 +1,7 @@
 {
   "platforms": ["apple", "android", "web"],
   "apple": {
-    "modules": ["ExpoGdalPdfiumModule"]
+    "modules": ["ExpoGdalModule"]
   },
   "android": {
     "gradleAarProjects": [
@@ -10,6 +10,6 @@
         "aarFilePath": "android/libs/gdal-release.aar"
       }
     ],
-    "modules": ["expo.modules.gdalpdfium.ExpoGdalPdfiumModule"]
+    "modules": ["expo.modules.gdal.ExpoGdalModule"]
   }
 }

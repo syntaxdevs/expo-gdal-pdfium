@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Button, ScrollView, ActivityIndicator } from 'react-native';
 import { useState } from 'react';
-import { getVersionInfo, listDrivers, VersionInfoResponse, DriversListResponse } from 'expo-gdal-pdfium';
+import { getVersionInfo, listDrivers, VersionInfoResponse, DriversListResponse } from 'expo-gdal';
 import ReadGeoPDFScreen from './screens/ReadGeoPDFScreen';
 
 export default function App() {

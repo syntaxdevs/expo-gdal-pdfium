@@ -1,4 +1,4 @@
-# expo-gdal-pdfium
+# expo-gdal
 
 Expo module for processing GeoPDF files using GDAL with coordinate transformation to WGS84.
 
@@ -15,17 +15,17 @@ Expo module for processing GeoPDF files using GDAL with coordinate transformatio
 ### From GitHub
 
 ```bash
-npm install https://github.com/syntaxdevs/expo-gdal-pdfium.git
+npm install https://github.com/syntaxdevs/expo-gdal.git
 # or
-yarn add https://github.com/syntaxdevs/expo-gdal-pdfium.git
+yarn add https://github.com/syntaxdevs/expo-gdal.git
 ```
 
 ### From npm (if published)
 
 ```bash
-npm install expo-gdal-pdfium
+npm install expo-gdal
 # or
-yarn add expo-gdal-pdfium
+yarn add expo-gdal
 ```
 ## Example App
 
@@ -61,7 +61,7 @@ import {
   listDrivers, 
   readGeoPDF, 
   renderGeoPDFToPng 
-} from 'expo-gdal-pdfium';
+} from 'expo-gdal';
 
 // Get GDAL version information
 const versionInfo = await getVersionInfo();
@@ -136,5 +136,5 @@ MIT
 
 ## Repository
 
-https://github.com/syntaxdevs/expo-gdal-pdfium
+https://github.com/syntaxdevs/expo-gdal
 
